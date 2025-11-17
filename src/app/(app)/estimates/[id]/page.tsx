@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { ArrowLeft, Download, FilePlus2 } from 'lucide-react';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
-import type { Client, Estimate, LineItem } from '@/lib/types';
+import type { Estimate, LineItem } from '@/lib/types';
 
 export default function EstimateDetailPage() {
   const params = useParams();
@@ -32,19 +32,16 @@ export default function EstimateDetailPage() {
   const estimateRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'estimates', id) : null, [firestore, user, id]);
   const { data: estimate, isLoading: isLoadingEstimate } = useDoc<Estimate>(estimateRef);
   
-  const clientRef = useMemoFirebase(() => (user && estimate) ? doc(firestore, 'users', user.uid, 'clients', estimate.clientId) : null, [firestore, user, estimate]);
-  const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
-
   const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'estimates', id, 'lineItems') : null, [firestore, user, id]);
   const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<LineItem>(lineItemsRef);
 
-  const isLoading = isLoadingEstimate || isLoadingClient || isLoadingLineItems;
+  const isLoading = isLoadingEstimate || isLoadingLineItems;
 
   if (isLoading) {
     return <div>Loading estimate...</div>;
   }
 
-  if (!estimate || !client) {
+  if (!estimate) {
     notFound();
   }
   
@@ -91,12 +88,9 @@ export default function EstimateDetailPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">{client.firstName} {client.lastName}</div>
+              <div className="font-semibold">Client</div>
               <div className="text-muted-foreground">
-                {client.address}
-              </div>
-              <div className="text-muted-foreground">
-                {client.email}
+                {estimate.clientId}
               </div>
             </div>
           </div>
