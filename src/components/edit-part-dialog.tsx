@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { ImageIcon, Upload } from 'lucide-react';
+import { ImageIcon, Upload, X } from 'lucide-react';
 import type { Part } from '@/lib/types';
 
 const partSchema = z.object({
@@ -52,7 +52,7 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<PartFormValues>({
     resolver: zodResolver(partSchema),
     defaultValues: part,
@@ -82,6 +82,10 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleRemoveImage = () => {
+    setValue('imageUrl', '', { shouldDirty: true });
   };
 
   const onSubmit = (data: PartFormValues) => {
@@ -134,10 +138,18 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   )}
                </div>
-               <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload
-               </Button>
+               <div className='flex flex-col gap-2'>
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload
+                  </Button>
+                  {imageUrl && (
+                    <Button type="button" variant="destructive" size="sm" onClick={handleRemoveImage}>
+                        <X className="mr-2 h-4 w-4" />
+                        Remove
+                    </Button>
+                  )}
+               </div>
                <Input 
                   type="file"
                   ref={fileInputRef}
@@ -152,7 +164,7 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !isDirty}>
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
