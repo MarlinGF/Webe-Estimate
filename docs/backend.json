@@ -1,0 +1,376 @@
+{
+  "entities": {
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client who receives estimates and invoices.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the client."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "First name of the client."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Last name of the client."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the client.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the client."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the client."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any notes about the client."
+        }
+      },
+      "required": [
+        "id",
+        "firstName",
+        "lastName",
+        "email"
+      ]
+    },
+    "Estimate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Estimate",
+      "type": "object",
+      "description": "Represents an estimate created for a client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the estimate."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to Client. (Relationship: Client 1:N Estimate)"
+        },
+        "estimateDate": {
+          "type": "string",
+          "description": "Date the estimate was created.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the estimate."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the estimate (e.g., Draft, Sent, Approved, Rejected)."
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "estimateDate",
+        "totalAmount",
+        "status"
+      ]
+    },
+    "Invoice": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Invoice",
+      "type": "object",
+      "description": "Represents an invoice generated from an estimate.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the invoice."
+        },
+        "estimateId": {
+          "type": "string",
+          "description": "Reference to Estimate. (Relationship: Estimate 1:1 Invoice)"
+        },
+        "invoiceDate": {
+          "type": "string",
+          "description": "Date the invoice was created.",
+          "format": "date-time"
+        },
+        "dueDate": {
+          "type": "string",
+          "description": "Date the invoice is due.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the invoice."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "Payment status of the invoice (e.g., Pending, Paid, Overdue)."
+        }
+      },
+      "required": [
+        "id",
+        "estimateId",
+        "invoiceDate",
+        "dueDate",
+        "totalAmount",
+        "paymentStatus"
+      ]
+    },
+    "LineItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LineItem",
+      "type": "object",
+      "description": "Represents a line item in an estimate or invoice.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the line item."
+        },
+        "estimateId": {
+          "type": "string",
+          "description": "Reference to Estimate. (Relationship: Estimate 1:N LineItem)"
+        },
+        "invoiceId": {
+          "type": "string",
+          "description": "Reference to Invoice. (Relationship: Invoice 1:N LineItem)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the item."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the item."
+        },
+        "unitPrice": {
+          "type": "number",
+          "description": "Unit price of the item."
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount for the line item."
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "quantity",
+        "unitPrice",
+        "totalAmount"
+      ]
+    },
+    "Service": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Service",
+      "type": "object",
+      "description": "Represents a service offered.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the service."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the service."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the service."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the service."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price"
+      ]
+    },
+    "Part": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Part",
+      "type": "object",
+      "description": "Represents a part used in a service.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the part."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the part."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the part."
+        },
+        "cost": {
+          "type": "number",
+          "description": "Cost of the part."
+        },
+        "price": {
+          "type": "number",
+          "description": "Selling price of the part."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "cost",
+        "price"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client data specific to a user. Uses path-based ownership for security. The `userId` parameter identifies the owner.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the client."
+            },
+            {
+              "name": "clientId",
+              "description": "The ID of the client document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}",
+        "definition": {
+          "entityName": "Estimate",
+          "schema": {
+            "$ref": "#/backend/entities/Estimate"
+          },
+          "description": "Stores estimates associated with a specific client. Uses path-based ownership for security. Includes denormalized `clientId` for efficient querying.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the client and estimate."
+            },
+            {
+              "name": "clientId",
+              "description": "The ID of the client associated with the estimate."
+            },
+            {
+              "name": "estimateId",
+              "description": "The ID of the estimate document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}/invoices/{invoiceId}",
+        "definition": {
+          "entityName": "Invoice",
+          "schema": {
+            "$ref": "#/backend/entities/Invoice"
+          },
+          "description": "Stores invoices generated from estimates. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the client, estimate and invoice."
+            },
+            {
+              "name": "clientId",
+              "description": "The ID of the client associated with the invoice."
+            },
+            {
+              "name": "estimateId",
+              "description": "The ID of the estimate associated with the invoice."
+            },
+            {
+              "name": "invoiceId",
+              "description": "The ID of the invoice document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}/lineItems/{lineItemId}",
+        "definition": {
+          "entityName": "LineItem",
+          "schema": {
+            "$ref": "#/backend/entities/LineItem"
+          },
+          "description": "Stores line items for a specific estimate. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The ID of the user who owns the client, estimate and line item."
+            },
+            {
+              "name": "clientId",
+              "description": "The ID of the client associated with the line item."
+            },
+            {
+              "name": "estimateId",
+              "description": "The ID of the estimate associated with the line item."
+            },
+            {
+              "name": "lineItemId",
+              "description": "The ID of the line item document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/services/{serviceId}",
+        "definition": {
+          "entityName": "Service",
+          "schema": {
+            "$ref": "#/backend/entities/Service"
+          },
+          "description": "Stores services offered. Globally accessible data.",
+          "params": [
+            {
+              "name": "serviceId",
+              "description": "The ID of the service document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/parts/{partId}",
+        "definition": {
+          "entityName": "Part",
+          "schema": {
+            "$ref": "#/backend/entities/Part"
+          },
+          "description": "Stores parts used in services. Globally accessible data.",
+          "params": [
+            {
+              "name": "partId",
+              "description": "The ID of the part document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It also adheres to the design strategy mandates, including denormalization, structural segregation and access modeling.\n\nAuthorization Independence is achieved through denormalization. For instance, instead of relying on parent document attributes to authorize access to subcollections, relevant authorization data (like `ownerId` or a `members` map) is copied into the subcollection documents, eliminating the need for `get()` calls in security rules. This ensures that authorization checks are self-contained and atomic.\n\nStructural Segregation is implemented by storing different types of data in separate collections based on their access requirements. User-specific data is stored under `/users/{userId}`, collaborative data utilizes Membership Maps, and global roles are managed through dedicated collections like `/roles_admin/{uid}`. This approach simplifies security rules by ensuring that all documents within a collection share a homogeneous security posture.\n\nAccess Modeling follows consistent patterns. Private data is managed through path-based ownership (e.g., `/users/{userId}/clients/{clientId}`). Collaborative access is controlled via Membership Maps (denormalized where necessary). Global roles are implemented using existence checks in dedicated role collections.\n\nQAPs (Rules are not Filters) are supported by the structural segregation. Since each collection has a uniform security posture, list operations can be secured without filtering based on document content.\n\nSpecifically, this structure facilitates easy querying of clients, estimates, and invoices associated with a particular user. The relationships between entities (e.g., a Client having multiple Estimates) are captured using hierarchical paths, promoting straightforward and efficient security rule design."
+  }
+}
