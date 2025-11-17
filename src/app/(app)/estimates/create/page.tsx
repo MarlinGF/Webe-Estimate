@@ -55,7 +55,7 @@ export default function CreateEstimatePage() {
   const { firestore, user } = useFirebase();
 
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
-  const { data: clientList, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
+  const { data: clientList, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
 
   const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
   const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesCollection);
