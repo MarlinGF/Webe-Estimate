@@ -115,7 +115,7 @@ export default function CreateEstimatePage() {
     });
   };
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = (data: FormValues) => {
     if (!user || !firestore) return;
     
     const estimateData = {
@@ -128,36 +128,38 @@ export default function CreateEstimatePage() {
     };
 
     const { lineItems, ...estimateCore } = estimateData;
+    
+    const estimatesCollectionRef = collection(firestore, 'users', user.uid, 'estimates');
 
-    try {
-        const estimatesCollectionRef = collection(firestore, 'users', user.uid, 'estimates');
-        const newEstimateRef = await addDocumentNonBlocking(estimatesCollectionRef, estimateCore);
-        
+    addDocumentNonBlocking(estimatesCollectionRef, estimateCore)
+      .then(newEstimateRef => {
         if (newEstimateRef) {
-            const batch = writeBatch(firestore);
-            const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
-            
-            lineItems.forEach(item => {
-                const newItemRef = doc(lineItemsCollectionRef);
-                batch.set(newItemRef, item);
-            });
-            
-            await batch.commit();
-
-            toast({
-                title: "Estimate Created",
-                description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
-            });
-            router.push('/estimates');
+          const batch = writeBatch(firestore);
+          const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
+          
+          lineItems.forEach(item => {
+            const newItemRef = doc(lineItemsCollectionRef);
+            batch.set(newItemRef, item);
+          });
+          
+          return batch.commit();
         }
-    } catch (e) {
+      })
+      .then(() => {
+        toast({
+          title: "Estimate Created",
+          description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
+        });
+        router.push('/estimates');
+      })
+      .catch(e => {
         console.error("Error creating estimate:", e);
         toast({
             title: "Error",
             description: "There was a problem creating the estimate.",
             variant: "destructive"
         });
-    }
+      });
   };
 
   return (
@@ -367,3 +369,5 @@ export default function CreateEstimatePage() {
     </form>
   );
 }
+
+    
