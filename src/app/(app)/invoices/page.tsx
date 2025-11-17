@@ -21,16 +21,17 @@ import { formatCurrency } from '@/lib/utils';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Invoice, Client } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export default function InvoicesPage() {
   const { firestore, user } = useFirebase();
 
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id' | 'client'>>(invoicesCollection);
+  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
+  
   const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
 
   useEffect(() => {
@@ -43,7 +44,11 @@ export default function InvoicesPage() {
     }
   }, [clients]);
 
-  const combinedInvoices = invoices?.map(i => ({...i, client: clientsById[i.clientId]}));
+  const isLoading = isLoadingClients || isLoadingInvoices;
+
+  const combinedInvoices = useMemo(() => 
+    invoices?.map(i => ({...i, client: clientsById[i.clientId]})) || [],
+  [invoices, clientsById]);
 
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Paid: 'default',
@@ -51,8 +56,6 @@ export default function InvoicesPage() {
     Overdue: 'destructive',
     Draft: 'outline',
   };
-
-  const isLoading = isLoadingClients || isLoadingInvoices;
 
   return (
     <Card>

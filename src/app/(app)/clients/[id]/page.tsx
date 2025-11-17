@@ -31,13 +31,13 @@ export default function ClientDetailPage() {
   const { firestore, user } = useFirebase();
 
   const clientRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'clients', id) : null, [firestore, user, id]);
-  const { data: client, isLoading: isLoadingClient } = useDoc<Omit<Client, 'id'>>(clientRef);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
 
   const estimatesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates'), where('clientId', '==', id)) : null, [firestore, user, id]);
-  const { data: clientEstimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesRef);
+  const { data: clientEstimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesRef);
   
   const invoicesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices'), where('clientId', '==', id)) : null, [firestore, user, id]);
-  const { data: clientInvoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id' | 'client'>>(invoicesRef);
+  const { data: clientInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesRef);
 
   const isLoading = isLoadingClient || isLoadingEstimates || isLoadingInvoices;
 

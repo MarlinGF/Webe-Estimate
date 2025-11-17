@@ -20,7 +20,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DollarSign, FileText, Receipt, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Estimate, Invoice, Client } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
@@ -28,12 +28,14 @@ export default function Dashboard() {
   const { firestore, user } = useFirebase();
 
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
+  
   const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
 
-  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
-  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesCollection);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id' | 'client'>>(invoicesCollection);
+  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
+  
   const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
 
   useEffect(() => {
@@ -46,9 +48,15 @@ export default function Dashboard() {
     }
   }, [clients]);
 
+  const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
 
-  const combinedEstimates = estimates?.map(e => ({...e, client: clientsById[e.clientId]}));
-  const combinedInvoices = invoices?.map(i => ({...i, client: clientsById[i.clientId]}));
+  const combinedEstimates = useMemo(() => 
+    estimates?.map(e => ({...e, client: clientsById[e.clientId]})) || [], 
+  [estimates, clientsById]);
+
+  const combinedInvoices = useMemo(() => 
+    invoices?.map(i => ({...i, client: clientsById[i.clientId]})) || [],
+  [invoices, clientsById]);
 
   const totalRevenue = combinedInvoices
     ?.filter((inv) => inv.status === 'Paid')
@@ -66,11 +74,11 @@ export default function Dashboard() {
 
   const recentActivity = [...(combinedEstimates || []), ...(combinedInvoices || [])]
     .sort(
-      (a, b) =>
-        new Date(
-          'invoiceDate' in b ? b.invoiceDate : b.estimateDate
-        ).getTime() -
-        new Date('invoiceDate' in a ? a.invoiceDate : a.estimateDate).getTime()
+      (a, b) => {
+        const dateA = new Date('invoiceDate' in a ? a.invoiceDate : a.estimateDate).getTime();
+        const dateB = new Date('invoiceDate' in b ? b.invoiceDate : b.estimateDate).getTime();
+        return dateB - dateA;
+      }
     )
     .slice(0, 5);
   
@@ -83,7 +91,6 @@ export default function Dashboard() {
     Rejected: 'destructive',
   };
 
-  const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
 
   if (isLoading) {
     return <div>Loading dashboard...</div>
@@ -162,12 +169,16 @@ export default function Dashboard() {
             </TableHeader>
             <TableBody>
               {recentActivity.map((doc) => (
-                <TableRow key={'invoiceNumber' in doc ? doc.invoiceNumber : doc.estimateNumber}>
+                <TableRow key={('invoiceNumber' in doc ? doc.invoiceNumber : doc.estimateNumber) + doc.id}>
                   <TableCell>
-                    <div className="font-medium">{doc.client?.firstName} {doc.client?.lastName}</div>
-                    <div className="hidden text-sm text-muted-foreground md:inline">
-                      {doc.client?.email}
-                    </div>
+                    {doc.client ? (
+                      <>
+                        <div className="font-medium">{doc.client?.firstName} {doc.client?.lastName}</div>
+                        <div className="hidden text-sm text-muted-foreground md:inline">
+                          {doc.client?.email}
+                        </div>
+                      </>
+                    ) : 'Loading...'}
                   </TableCell>
                   <TableCell>
                     {'invoiceNumber' in doc ? 'Invoice' : 'Estimate'}

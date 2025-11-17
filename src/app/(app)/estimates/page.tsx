@@ -23,16 +23,17 @@ import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Estimate, Client } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export default function EstimatesPage() {
   const { firestore, user } = useFirebase();
 
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
-  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
-  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesCollection);
+  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
+  
   const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
 
   useEffect(() => {
@@ -45,7 +46,11 @@ export default function EstimatesPage() {
     }
   }, [clients]);
 
-  const combinedEstimates = estimates?.map(e => ({...e, client: clientsById[e.clientId]}));
+  const isLoading = isLoadingClients || isLoadingEstimates;
+
+  const combinedEstimates = useMemo(() => 
+    estimates?.map(e => ({...e, client: clientsById[e.clientId]})) || [], 
+  [estimates, clientsById]);
 
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Approved: 'default',
@@ -53,8 +58,6 @@ export default function EstimatesPage() {
     Rejected: 'destructive',
     Draft: 'outline',
   };
-
-  const isLoading = isLoadingClients || isLoadingEstimates;
 
   return (
     <Card>
