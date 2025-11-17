@@ -57,12 +57,11 @@ export default function ServicesPage() {
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead className="text-right">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
             {!isLoading && services?.map((service) => (
               <TableRow key={service.id}>
                 <TableCell>
@@ -81,7 +80,6 @@ export default function ServicesPage() {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{service.name}</TableCell>
-                <TableCell className="text-muted-foreground">{service.description}</TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(service.price)}
                 </TableCell>

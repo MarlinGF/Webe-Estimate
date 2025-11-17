@@ -57,13 +57,12 @@ export default function PartsPage() {
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead>Cost</TableHead>
               <TableHead className="text-right">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
             {!isLoading && parts?.map((part) => (
               <TableRow key={part.id}>
                  <TableCell>
@@ -82,7 +81,6 @@ export default function PartsPage() {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{part.name}</TableCell>
-                <TableCell className="text-muted-foreground">{part.description}</TableCell>
                 <TableCell>{formatCurrency(part.cost)}</TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(part.price)}
