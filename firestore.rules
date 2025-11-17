@@ -13,7 +13,7 @@
  * Key Security Decisions:
  * - Clients, estimates, invoices, and line items are strictly owned by the user ID in the path.
  * - Listing of clients, estimates, invoices, and line items is only allowed for the owner.
- * - Services and parts are publicly readable, but can be created by any authenticated user.
+ * - Services and parts are publicly readable, but can be created, updated, and deleted by any authenticated user.
  *
  * Denormalization for Authorization:
  * -  The `clientId`, `estimateId`, and `invoiceId` are denormalized into subcollection documents to avoid costly `get()` calls in security rules.
@@ -94,32 +94,26 @@ service cloud.firestore {
      * @description Allows anyone to read service data. Write operations are allowed for authenticated users.
      * @path /services/{serviceId}
      * @allow (get, list) - Any user, signed in or not, can read service data.
-     * @allow (create) - Any authenticated user can create a new service.
-     * @deny (update, delete) - No one can update or delete service data through client-side rules.
+     * @allow (create, update, delete) - Any authenticated user can create, update, or delete a service.
      * @principle Public read access with restricted write access for authenticated users.
      */
     match /services/{serviceId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if isSignedIn();
     }
 
     /**
      * @description Allows anyone to read part data. Write operations are allowed for authenticated users.
      * @path /parts/{partId}
      * @allow (get, list) - Any user, signed in or not, can read part data.
-     * @allow (create) - Any authenticated user can create a new part.
-     * @deny (update, delete) - No one can update or delete part data through client-side rules.
+     * @allow (create, update, delete) - Any authenticated user can create, update, or delete a part.
      * @principle Public read access with restricted write access for authenticated users.
      */
     match /parts/{partId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
+      allow create, update, delete: if isSignedIn();
     }
   }
 }

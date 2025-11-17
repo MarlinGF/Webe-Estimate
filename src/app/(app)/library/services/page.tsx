@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import {
   Card,
@@ -16,26 +17,55 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { PlusCircle, ImageIcon } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { PlusCircle, ImageIcon, MoreHorizontal } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import type { Service } from '@/lib/types';
 import { AddServiceDialog } from '@/components/add-service-dialog';
+import { EditServiceDialog } from '@/components/edit-service-dialog';
+import { DeleteItemAlert } from '@/components/delete-item-alert';
 
 export default function ServicesPage() {
   const { firestore } = useFirebase();
-  
-  const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+
+  const servicesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'services'): null, [firestore]);
   const { data: services, isLoading } = useCollection<Service>(servicesCollection);
 
   const handleAddService = (newService: Omit<Service, 'id'>) => {
     if(!servicesCollection) return;
     addDocumentNonBlocking(servicesCollection, newService);
   };
+  
+  const handleUpdateService = (updatedService: Service) => {
+    if (!firestore) return;
+    const serviceRef = doc(firestore, 'services', updatedService.id);
+    const { id, ...serviceData } = updatedService;
+    updateDocumentNonBlocking(serviceRef, serviceData);
+    setEditingService(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingItemId && firestore) {
+      const itemRef = doc(firestore, 'services', deletingItemId);
+      deleteDocumentNonBlocking(itemRef);
+      setDeletingItemId(null);
+    }
+  };
+
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
@@ -57,11 +87,14 @@ export default function ServicesPage() {
             <TableRow>
               <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead className="text-right">Price</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
             {!isLoading && services?.map((service) => (
               <TableRow key={service.id}>
                 <TableCell>
@@ -80,14 +113,52 @@ export default function ServicesPage() {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{service.name}</TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(service.price)}
-                </TableCell>
+                <TableCell>{formatCurrency(service.price)}</TableCell>
+                <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => setEditingService(service)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDeletingItemId(service.id)} className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
+
+    {editingService && (
+      <EditServiceDialog
+        service={editingService}
+        onUpdateService={handleUpdateService}
+        onOpenChange={(isOpen) => !isOpen && setEditingService(null)}
+      />
+    )}
+
+    {deletingItemId && (
+      <DeleteItemAlert
+        onDeleteConfirm={handleDeleteConfirm}
+        onOpenChange={(isOpen) => !isOpen && setDeletingItemId(null)}
+        itemName="service"
+      />
+    )}
+    </>
   );
 }
