@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -14,10 +17,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { clients } from '@/lib/data';
+import { clients as initialClients } from '@/lib/data';
 import { AddClientDialog } from '@/components/add-client-dialog';
+import type { Client } from '@/lib/types';
 
 export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>(initialClients);
+
+  const handleAddClient = (newClient: Omit<Client, 'id'>) => {
+    setClients((prevClients) => [
+      ...prevClients,
+      { ...newClient, id: `cli-${prevClients.length + 1}` },
+    ]);
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -27,7 +40,7 @@ export default function ClientsPage() {
             Manage your clients and view their history.
           </CardDescription>
         </div>
-        <AddClientDialog />
+        <AddClientDialog onAddClient={handleAddClient} />
       </CardHeader>
       <CardContent>
         <Table>

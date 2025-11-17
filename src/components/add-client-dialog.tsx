@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle } from 'lucide-react';
+import type { Client } from '@/lib/types';
+
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -28,7 +30,11 @@ const clientSchema = z.object({
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
-export function AddClientDialog() {
+interface AddClientDialogProps {
+  onAddClient: (client: Omit<Client, 'id'>) => void;
+}
+
+export function AddClientDialog({ onAddClient }: AddClientDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const {
@@ -41,8 +47,7 @@ export function AddClientDialog() {
   });
 
   const onSubmit = (data: ClientFormValues) => {
-    // In a real app, you'd call an API to save the client.
-    console.log('New client data:', data);
+    onAddClient(data);
     toast({
       title: 'Client Created',
       description: `${data.name} has been successfully added.`,
