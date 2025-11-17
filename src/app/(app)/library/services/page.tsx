@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -14,11 +16,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { services } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Service } from '@/lib/types';
 
 export default function ServicesPage() {
+  const { firestore } = useFirebase();
+  
+  const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
+  const { data: services, isLoading } = useCollection<Service>(servicesCollection);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -43,7 +52,8 @@ export default function ServicesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {services.map((service) => (
+            {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+            {!isLoading && services?.map((service) => (
               <TableRow key={service.id}>
                 <TableCell className="font-medium">{service.name}</TableCell>
                 <TableCell className="text-muted-foreground">{service.description}</TableCell>

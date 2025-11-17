@@ -24,17 +24,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/lib/utils';
 import type { Item } from '@/lib/types';
 import { Library, PlusCircle } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 
 interface AddFromLibraryDialogProps {
   services: Item[];
   parts: Item[];
   onAddItems: (items: Item[]) => void;
+  isLoading?: boolean;
 }
 
 export function AddFromLibraryDialog({
   services,
   parts,
   onAddItems,
+  isLoading
 }: AddFromLibraryDialogProps) {
   const [open, setOpen] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Item[]>([]);
@@ -57,41 +60,53 @@ export function AddFromLibraryDialog({
     return selectedItems.some((i) => i.id === itemId);
   };
 
-  const renderItemTable = (items: Item[]) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[40px]"></TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead className="text-right">Price</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>
-              <Checkbox
-                checked={isItemSelected(item.id)}
-                onCheckedChange={(checked) => handleSelect(item, checked)}
-              />
-            </TableCell>
-            <TableCell>
-              <div className="font-medium">{item.name}</div>
-              <div className="text-sm text-muted-foreground">{item.description}</div>
-            </TableCell>
-            <TableCell className="text-right">
-              {formatCurrency(item.price)}
-            </TableCell>
+  const renderItemTable = (items: Item[]) => {
+    if (isLoading) {
+      return (
+        <div className="space-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      )
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[40px]"></TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead className="text-right">Price</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
+        </TableHeader>
+        <TableBody>
+          {items.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>
+                <Checkbox
+                  checked={isItemSelected(item.id)}
+                  onCheckedChange={(checked) => handleSelect(item, checked)}
+                />
+              </TableCell>
+              <TableCell>
+                <div className="font-medium">{item.name}</div>
+                <div className="text-sm text-muted-foreground">{item.description}</div>
+              </TableCell>
+              <TableCell className="text-right">
+                {formatCurrency(item.price)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="gap-1">
+        <Button size="sm" variant="ghost" className="gap-1" type="button">
           <Library className="h-3.5 w-3.5" />
           Add from Library
         </Button>

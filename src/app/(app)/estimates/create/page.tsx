@@ -30,16 +30,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { services, parts } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { AiDescriptionGenerator } from '@/components/ai-description-generator';
 import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
-import type { Item, Client } from '@/lib/types';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import type { Item, Client, Service, Part } from '@/lib/types';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, writeBatch } from 'firebase/firestore';
 
 
 type FormValues = {
@@ -58,6 +57,12 @@ export default function CreateEstimatePage() {
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
   const { data: clientList, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
 
+  const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
+  const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesCollection);
+
+  const partsCollection = useMemoFirebase(() => collection(firestore, 'parts'), [firestore]);
+  const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsCollection);
+
 
   const {
     register,
@@ -65,7 +70,7 @@ export default function CreateEstimatePage() {
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
       estimateNumber: `EST-${new Date().getFullYear()}-${String(
@@ -102,7 +107,6 @@ export default function CreateEstimatePage() {
   }, [watchLineItems]);
 
   const handleAddItemsFromLibrary = (items: Item[]) => {
-    // Check if the first default line item is empty, if so, remove it.
     if (fields.length === 1 && !watchLineItems[0].description && watchLineItems[0].price === 0) {
       remove(0);
     }
@@ -111,13 +115,49 @@ export default function CreateEstimatePage() {
     });
   };
 
-  const onSubmit = (data: FormValues) => {
-    console.log(data);
-    toast({
-        title: "Estimate Created",
-        description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
-    });
-    router.push('/estimates');
+  const onSubmit = async (data: FormValues) => {
+    if (!user || !firestore) return;
+    
+    const estimateData = {
+      ...data,
+      userId: user.uid,
+      status: 'Draft',
+      subtotal,
+      tax,
+      total,
+    };
+
+    const { lineItems, ...estimateCore } = estimateData;
+
+    try {
+        const estimatesCollectionRef = collection(firestore, 'users', user.uid, 'estimates');
+        const newEstimateRef = await addDocumentNonBlocking(estimatesCollectionRef, estimateCore);
+        
+        if (newEstimateRef) {
+            const batch = writeBatch(firestore);
+            const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
+            
+            lineItems.forEach(item => {
+                const newItemRef = doc(lineItemsCollectionRef);
+                batch.set(newItemRef, item);
+            });
+            
+            await batch.commit();
+
+            toast({
+                title: "Estimate Created",
+                description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
+            });
+            router.push('/estimates');
+        }
+    } catch (e) {
+        console.error("Error creating estimate:", e);
+        toast({
+            title: "Error",
+            description: "There was a problem creating the estimate.",
+            variant: "destructive"
+        });
+    }
   };
 
   return (
@@ -136,7 +176,9 @@ export default function CreateEstimatePage() {
           <Button variant="outline" size="sm" asChild>
             <Link href="/estimates">Cancel</Link>
           </Button>
-          <Button size="sm" type="submit">Save Estimate</Button>
+          <Button size="sm" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Estimate'}
+          </Button>
         </div>
       </div>
       <div className="grid gap-4 md:grid-cols-[1fr_250px] lg:grid-cols-3 lg:gap-8">
@@ -275,6 +317,7 @@ export default function CreateEstimatePage() {
                 size="sm"
                 variant="ghost"
                 className="gap-1"
+                type="button"
                 onClick={() =>
                   append({ description: '', quantity: 1, price: 0 })
                 }
@@ -283,9 +326,10 @@ export default function CreateEstimatePage() {
                 Add Line Item
               </Button>
               <AddFromLibraryDialog
-                services={services}
-                parts={parts}
+                services={services || []}
+                parts={parts || []}
                 onAddItems={handleAddItemsFromLibrary}
+                isLoading={isLoadingServices || isLoadingParts}
               />
             </CardFooter>
           </Card>
@@ -316,7 +360,9 @@ export default function CreateEstimatePage() {
           <Button variant="outline" size="sm" asChild>
             <Link href="/estimates">Cancel</Link>
           </Button>
-          <Button size="sm" type="submit">Save Estimate</Button>
+          <Button size="sm" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Estimate'}
+          </Button>
         </div>
     </form>
   );

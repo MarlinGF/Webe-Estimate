@@ -1,7 +1,8 @@
+'use client';
+
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -14,24 +15,39 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { estimates } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ArrowLeft, Download, FilePlus2 } from 'lucide-react';
+import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+import type { Client, Estimate, LineItem } from '@/lib/types';
 
-export default function EstimateDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const estimate = estimates.find((e) => e.id === params.id);
+export default function EstimateDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { firestore, user } = useFirebase();
 
-  if (!estimate) {
-    notFound();
+  const estimateRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'estimates', id) : null, [firestore, user, id]);
+  const { data: estimate, isLoading: isLoadingEstimate } = useDoc<Omit<Estimate, 'id'|'client'>>(estimateRef);
+  
+  const clientRef = useMemoFirebase(() => (user && estimate) ? doc(firestore, 'users', user.uid, 'clients', estimate.clientId) : null, [firestore, user, estimate]);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Omit<Client, 'id'>>(clientRef);
+
+  const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'estimates', id, 'lineItems') : null, [firestore, user, id]);
+  const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<Omit<LineItem, 'id'>>(lineItemsRef);
+
+  const isLoading = isLoadingEstimate || isLoadingClient || isLoadingLineItems;
+
+  if (isLoading) {
+    return <div>Loading estimate...</div>;
   }
 
+  if (!estimate || !client) {
+    notFound();
+  }
+  
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Approved: 'default',
     Sent: 'secondary',
@@ -75,12 +91,12 @@ export default function EstimateDetailPage({
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">{estimate.client.name}</div>
+              <div className="font-semibold">{client.firstName} {client.lastName}</div>
               <div className="text-muted-foreground">
-                {estimate.client.address}
+                {client.address}
               </div>
               <div className="text-muted-foreground">
-                {estimate.client.email}
+                {client.email}
               </div>
             </div>
           </div>
@@ -96,7 +112,7 @@ export default function EstimateDetailPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {estimate.lineItems.map((item) => (
+              {lineItems?.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.description}</TableCell>
                   <TableCell>{item.quantity}</TableCell>

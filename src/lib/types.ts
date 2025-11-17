@@ -15,6 +15,9 @@ export interface Item {
   price: number;
 }
 
+export interface Service extends Item {}
+export interface Part extends Item {}
+
 export interface LineItem {
   id: string;
   description: string;
@@ -29,7 +32,7 @@ export interface Estimate {
   client?: Client;
   estimateDate: string;
   expiryDate: string;
-  lineItems: LineItem[];
+  lineItems?: LineItem[]; // lineItems are now a subcollection
   subtotal: number;
   tax: number;
   total: number;
@@ -44,7 +47,7 @@ export interface Invoice {
   client?: Client;
   invoiceDate: string;
   dueDate: string;
-  lineItems: LineItem[];
+  lineItems?: LineItem[]; // lineItems are now a subcollection
   subtotal: number;
   tax: number;
   total: number;

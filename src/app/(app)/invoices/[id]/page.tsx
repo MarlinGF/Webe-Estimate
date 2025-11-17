@@ -1,7 +1,8 @@
+'use client';
+
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -14,22 +15,38 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { invoices } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ArrowLeft, CreditCard, Download } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+import type { Client, Invoice, LineItem } from '@/lib/types';
 
-export default function InvoiceDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const invoice = invoices.find((i) => i.id === params.id);
 
-  if (!invoice) {
+export default function InvoiceDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { firestore, user } = useFirebase();
+
+  const invoiceRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'invoices', id) : null, [firestore, user, id]);
+  const { data: invoice, isLoading: isLoadingInvoice } = useDoc<Omit<Invoice, 'id'|'client'>>(invoiceRef);
+
+  const clientRef = useMemoFirebase(() => (user && invoice) ? doc(firestore, 'users', user.uid, 'clients', invoice.clientId) : null, [firestore, user, invoice]);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Omit<Client, 'id'>>(clientRef);
+  
+  const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'invoices', id, 'lineItems') : null, [firestore, user, id]);
+  const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<Omit<LineItem, 'id'>>(lineItemsRef);
+
+  const isLoading = isLoadingInvoice || isLoadingClient || isLoadingLineItems;
+
+  if (isLoading) {
+    return <div>Loading invoice...</div>;
+  }
+
+  if (!invoice || !client) {
     notFound();
   }
 
@@ -80,12 +97,12 @@ export default function InvoiceDetailPage({
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">{invoice.client.name}</div>
+              <div className="font-semibold">{client.firstName} {client.lastName}</div>
               <div className="text-muted-foreground">
-                {invoice.client.address}
+                {client.address}
               </div>
               <div className="text-muted-foreground">
-                {invoice.client.email}
+                {client.email}
               </div>
             </div>
           </div>
@@ -101,7 +118,7 @@ export default function InvoiceDetailPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoice.lineItems.map((item) => (
+              {lineItems?.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.description}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
