@@ -4,11 +4,12 @@ export interface Client {
   email: string;
   phone?: string;
   address?: string;
+  userId?: string;
 }
 
 export interface Item {
   id: string;
-  name: string;
+  name:string;
   description: string;
   price: number;
 }

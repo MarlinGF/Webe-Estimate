@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -26,38 +26,38 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal } from 'lucide-react';
-import { clients as initialClients } from '@/lib/data';
 import { AddClientDialog } from '@/components/add-client-dialog';
 import { EditClientDialog } from '@/components/edit-client-dialog';
 import { DeleteClientAlert } from '@/components/delete-client-alert';
 import type { Client } from '@/lib/types';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>(initialClients);
+  const { firestore, user } = useFirebase();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clients, isLoading } = useCollection<Omit<Client, 'id'>>(clientsCollection);
 
-  const handleAddClient = (newClient: Omit<Client, 'id'>) => {
-    setClients((prevClients) => [
-      ...prevClients,
-      { ...newClient, id: `cli-${Date.now()}` },
-    ]);
+  const handleAddClient = (newClient: Omit<Client, 'id' | 'userId'>) => {
+    if (!clientsCollection) return;
+    addDoc(clientsCollection, { ...newClient, userId: user?.uid });
   };
 
   const handleUpdateClient = (updatedClient: Client) => {
-    setClients((prevClients) =>
-      prevClients.map((client) =>
-        client.id === updatedClient.id ? updatedClient : client
-      )
-    );
+    if (!user) return;
+    const clientRef = doc(firestore, 'users', user.uid, 'clients', updatedClient.id);
+    const { id, ...clientData } = updatedClient;
+    updateDoc(clientRef, clientData);
     setEditingClient(null);
   };
 
   const handleDeleteClient = () => {
-    if (deletingClientId) {
-      setClients((prevClients) =>
-        prevClients.filter((client) => client.id !== deletingClientId)
-      );
+    if (deletingClientId && user) {
+      const clientRef = doc(firestore, 'users', user.uid, 'clients', deletingClientId);
+      deleteDoc(clientRef);
       setDeletingClientId(null);
     }
   };
@@ -96,7 +96,8 @@ export default function ClientsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clients.map((client) => (
+              {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+              {!isLoading && clients?.map((client) => (
                 <TableRow key={client.id}>
                   <TableCell className="font-medium">
                     <Link

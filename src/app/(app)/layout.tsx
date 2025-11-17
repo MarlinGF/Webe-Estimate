@@ -1,11 +1,22 @@
+'use client';
+
+import { useEffect } from 'react';
 import { Header } from '@/components/header';
 import { MainNav } from '@/components/main-nav';
-import { UserNav } from '@/components/user-nav';
 import { FileText } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { FirebaseClientProvider, useFirebase, initiateAnonymousSignIn } from '@/firebase';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function AppContent({ children }: { children: React.ReactNode }) {
+  const { auth, user, isUserLoading } = useFirebase();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth, user, isUserLoading]);
+
   return (
     <SidebarProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -25,10 +36,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col">
           <Header />
           <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40">
-            {children}
+            {isUserLoading ? <div>Loading...</div> : children}
           </main>
         </div>
       </div>
     </SidebarProvider>
+  );
+}
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <FirebaseClientProvider>
+      <AppContent>{children}</AppContent>
+    </FirebaseClientProvider>
   );
 }

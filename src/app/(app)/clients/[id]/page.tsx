@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -15,19 +17,33 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { clients, estimates, invoices } from '@/lib/data';
+import { estimates, invoices } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Client } from '@/lib/types';
 
-export default function ClientDetailPage({ params }: { params: { id: string } }) {
-  const client = clients.find((c) => c.id === params.id);
+
+export default function ClientDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
+  const { firestore, user } = useFirebase();
+
+  const clientRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'clients', id) : null, [firestore, user, id]);
+  const { data: client, isLoading } = useDoc<Omit<Client, 'id'>>(clientRef);
+
+  if (isLoading) {
+    return <div>Loading client details...</div>
+  }
+
   if (!client) {
     notFound();
   }
 
-  const clientEstimates = estimates.filter((e) => e.client.id === client.id);
-  const clientInvoices = invoices.filter((i) => i.client.id === client.id);
+  const clientEstimates = estimates.filter((e) => e.client.id === id);
+  const clientInvoices = invoices.filter((i) => i.client.id === id);
 
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Paid: 'default',

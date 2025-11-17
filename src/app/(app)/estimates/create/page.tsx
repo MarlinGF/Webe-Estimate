@@ -30,14 +30,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { clients, services, parts } from '@/lib/data';
+import { services, parts } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { AiDescriptionGenerator } from '@/components/ai-description-generator';
-import { Trash2, PlusCircle, ArrowLeft, Library } from 'lucide-react';
+import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
 import type { Item, Client } from '@/lib/types';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+
 
 type FormValues = {
   clientId: string;
@@ -50,7 +53,11 @@ type FormValues = {
 export default function CreateEstimatePage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [clientList] = useState<Client[]>(clients);
+  const { firestore, user } = useFirebase();
+
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clientList, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
+
 
   const {
     register,
@@ -150,12 +157,12 @@ export default function CreateEstimatePage() {
                     control={control}
                     rules={{ required: 'Client is required' }}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingClients}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a client" />
+                          <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
                         </SelectTrigger>
                         <SelectContent>
-                          {clientList.map((client) => (
+                          {clientList?.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.name}
                             </SelectItem>
@@ -181,8 +188,7 @@ export default function CreateEstimatePage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="expiryDate">Expiry Date</Label>
-                  <Input
+                  <Label htmlFor="expiryDate">Expiry Date</Label>                  <Input
                     id="expiryDate"
                     type="date"
                     {...register('expiryDate')}

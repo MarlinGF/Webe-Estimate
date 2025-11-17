@@ -18,8 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle } from 'lucide-react';
-import type { Client } from '@/lib/types';
-
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -31,7 +29,7 @@ const clientSchema = z.object({
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 interface AddClientDialogProps {
-  onAddClient: (client: Omit<Client, 'id'>) => void;
+  onAddClient: (client: ClientFormValues) => void;
 }
 
 export function AddClientDialog({ onAddClient }: AddClientDialogProps) {
