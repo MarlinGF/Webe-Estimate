@@ -22,18 +22,21 @@ import Link from 'next/link';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import type { Estimate, Invoice, Client } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 
 export default function Dashboard() {
   const { firestore, user } = useFirebase();
 
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
+  const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : '', [user]);
+  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath)) : null, [firestore, user, estimatesPath]);
   const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
 
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : '', [user]);
+  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath)) : null, [firestore, user, invoicesPath]);
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
   
   const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});

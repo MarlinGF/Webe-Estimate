@@ -23,7 +23,6 @@ import { ArrowLeft, Download, FilePlus2 } from 'lucide-react';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import type { Client, Estimate, LineItem } from '@/lib/types';
-import { useEffect, useState } from 'react';
 
 export default function EstimateDetailPage() {
   const params = useParams();
@@ -33,29 +32,8 @@ export default function EstimateDetailPage() {
   const estimateRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'estimates', id) : null, [firestore, user, id]);
   const { data: estimate, isLoading: isLoadingEstimate } = useDoc<Estimate>(estimateRef);
   
-  const [client, setClient] = useState<Client | null>(null);
-  const [isLoadingClient, setIsLoadingClient] = useState(true);
-
-  useEffect(() => {
-    if (user && estimate && firestore) {
-      const clientRef = doc(firestore, 'users', user.uid, 'clients', estimate.clientId);
-      const { data: clientData, isLoading } = useDoc<Client>(clientRef);
-      
-      // This is not ideal, but we need to bridge useDoc to a local state
-      const unSub = onSnapshot(clientRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setClient({ ...docSnap.data(), id: docSnap.id } as Client);
-        } else {
-          setClient(null);
-        }
-        setIsLoadingClient(false);
-      });
-      return () => unSub();
-
-    } else if (!isLoadingEstimate) {
-      setIsLoadingClient(false);
-    }
-  }, [user, estimate, firestore, isLoadingEstimate]);
+  const clientRef = useMemoFirebase(() => (user && estimate) ? doc(firestore, 'users', user.uid, 'clients', estimate.clientId) : null, [firestore, user, estimate]);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
 
   const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'estimates', id, 'lineItems') : null, [firestore, user, id]);
   const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<LineItem>(lineItemsRef);

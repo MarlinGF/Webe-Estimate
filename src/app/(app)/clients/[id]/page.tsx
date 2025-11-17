@@ -33,10 +33,12 @@ export default function ClientDetailPage() {
   const clientRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'clients', id) : null, [firestore, user, id]);
   const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
 
-  const estimatesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates'), where('clientId', '==', id)) : null, [firestore, user, id]);
+  const estimatesPath = `users/${user?.uid}/estimates`;
+  const estimatesRef = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath), where('clientId', '==', id)) : null, [firestore, user, id, estimatesPath]);
   const { data: clientEstimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesRef);
   
-  const invoicesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices'), where('clientId', '==', id)) : null, [firestore, user, id]);
+  const invoicesPath = `users/${user?.uid}/invoices`;
+  const invoicesRef = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath), where('clientId', '==', id)) : null, [firestore, user, id, invoicesPath]);
   const { data: clientInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesRef);
 
   const isLoading = isLoadingClient || isLoadingEstimates || isLoadingInvoices;

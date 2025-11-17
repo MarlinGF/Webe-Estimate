@@ -26,10 +26,12 @@ import { useEffect, useState, useMemo } from 'react';
 export default function InvoicesPage() {
   const { firestore, user } = useFirebase();
 
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : '', [user]);
+  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath)) : null, [firestore, user, invoicesPath]);
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
   
   const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});

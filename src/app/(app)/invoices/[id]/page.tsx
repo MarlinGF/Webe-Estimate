@@ -22,10 +22,8 @@ import Link from 'next/link';
 import { ArrowLeft, CreditCard, Download } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection, onSnapshot } from 'firebase/firestore';
+import { doc, collection } from 'firebase/firestore';
 import type { Client, Invoice, LineItem } from '@/lib/types';
-import { useEffect, useState } from 'react';
-
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -35,26 +33,9 @@ export default function InvoiceDetailPage() {
   const invoiceRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'invoices', id) : null, [firestore, user, id]);
   const { data: invoice, isLoading: isLoadingInvoice } = useDoc<Invoice>(invoiceRef);
   
-  const [client, setClient] = useState<Client | null>(null);
-  const [isLoadingClient, setIsLoadingClient] = useState(true);
+  const clientRef = useMemoFirebase(() => (user && invoice) ? doc(firestore, 'users', user.uid, 'clients', invoice.clientId) : null, [firestore, user, invoice]);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
 
-  useEffect(() => {
-    if (user && invoice && firestore) {
-      const clientRef = doc(firestore, 'users', user.uid, 'clients', invoice.clientId);
-      const unsubscribe = onSnapshot(clientRef, (docSnap) => {
-        if (docSnap.exists()) {
-          setClient({ ...docSnap.data(), id: docSnap.id } as Client);
-        } else {
-          setClient(null);
-        }
-        setIsLoadingClient(false);
-      });
-      return () => unsubscribe();
-    } else if (!isLoadingInvoice) {
-      setIsLoadingClient(false);
-    }
-  }, [user, invoice, firestore, isLoadingInvoice]);
-  
   const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'invoices', id, 'lineItems') : null, [firestore, user, id]);
   const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<LineItem>(lineItemsRef);
 

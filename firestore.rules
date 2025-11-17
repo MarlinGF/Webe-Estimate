@@ -4,9 +4,9 @@
  *
  * Data Structure:
  * - `/users/{userId}/clients/{clientId}`: Stores client information, owned by the specified user.
- * - `/users/{userId}/clients/{clientId}/estimates/{estimateId}`: Stores estimates for a client, owned by the specified user.
- * - `/users/{userId}/clients/{clientId}/estimates/{estimateId}/invoices/{invoiceId}`: Stores invoices for an estimate, owned by the specified user.
- * - `/users/{userId}/clients/{clientId}/estimates/{estimateId}/lineItems/{lineItemId}`: Stores line items for an estimate, owned by the specified user.
+ * - `/users/{userId}/estimates/{estimateId}`: Stores estimates for a client, owned by the specified user.
+ * - `/users/{userId}/invoices/{invoiceId}`: Stores invoices for an estimate, owned by the specified user.
+ * - `/users/{userId}/estimates/{estimateId}/lineItems/{lineItemId}`: Stores line items for an estimate, owned by the specified user.
  * - `/services/{serviceId}`: Stores publicly accessible service information.
  * - `/parts/{partId}`: Stores publicly accessible part information.
  *
@@ -72,65 +72,37 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
     }
-
-    /**
-     * @description
-     *  - Allows a user to create, read, update, and delete estimates for their clients.
-     *  - Enforces that the `userId` and `clientId` path parameters match the estimate's ownership.
-     * @path /users/{userId}/clients/{clientId}/estimates/{estimateId}
-     * @allow (create) - User 'user_abc' creates a new estimate with ID 'estimate_456' for client 'client_123' under their user ID.
-     * @allow (get) - User 'user_abc' reads their own estimate data.
-     * @allow (update) - User 'user_abc' updates their own estimate data.
-     * @allow (delete) - User 'user_abc' deletes their own estimate data.
-     * @deny (create) - User 'user_xyz' attempts to create an estimate under user 'user_abc's client.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /users/{userId}/clients/{clientId}/estimates/{estimateId} {
+    
+    match /users/{userId}/estimates/{estimateId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
+      
+      match /lineItems/{lineItemId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
     }
-
-    /**
-     * @description
-     *  - Allows a user to create, read, update, and delete invoices for their estimates.
-     *  - Enforces path-based ownership based on `userId`, `clientId`, and `estimateId`.
-     * @path /users/{userId}/clients/{clientId}/estimates/{estimateId}/invoices/{invoiceId}
-     * @allow (create) - User 'user_abc' creates a new invoice with ID 'invoice_789' for estimate 'estimate_456' under their client.
-     * @allow (get) - User 'user_abc' reads their own invoice data.
-     * @allow (update) - User 'user_abc' updates their own invoice data.
-     * @allow (delete) - User 'user_abc' deletes their own invoice data.
-     * @deny (create) - User 'user_xyz' attempts to create an invoice under user 'user_abc's estimate.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /users/{userId}/clients/{clientId}/estimates/{estimateId}/invoices/{invoiceId} {
+    
+    match /users/{userId}/invoices/{invoiceId} {
       allow get: if isOwner(userId);
       allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
-    }
 
-    /**
-     * @description
-     *  - Allows a user to create, read, update, and delete line items for their estimates.
-     *  - Enforces path-based ownership based on `userId`, `clientId`, and `estimateId`.
-     * @path /users/{userId}/clients/{clientId}/estimates/{estimateId}/lineItems/{lineItemId}
-     * @allow (create) - User 'user_abc' creates a new line item with ID 'lineItem_101' for estimate 'estimate_456' under their client.
-     * @allow (get) - User 'user_abc' reads their own line item data.
-     * @allow (update) - User 'user_abc' updates their own line item data.
-     * @allow (delete) - User 'user_abc' deletes their own line item data.
-     * @deny (create) - User 'user_xyz' attempts to create a line item under user 'user_abc's estimate.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
-    match /users/{userId}/clients/{clientId}/estimates/{estimateId}/lineItems/{lineItemId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      match /lineItems/{lineItemId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId);
+        allow update: if isExistingOwner(userId);
+        allow delete: if isExistingOwner(userId);
+      }
     }
 
     /**
@@ -164,5 +136,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
