@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -18,8 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle } from 'lucide-react';
+import { ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import type { Part } from '@/lib/types';
+import { generateImageAction } from '@/lib/actions';
 
 const partSchema = z.object({
   name: z.string().min(1, 'Part name is required'),
@@ -44,15 +46,57 @@ interface AddPartDialogProps {
 
 export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const { toast } = useToast();
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PartFormValues>({
     resolver: zodResolver(partSchema),
   });
+
+  const name = watch('name');
+  const imageUrl = watch('imageUrl');
+
+  const handleGenerateImage = async () => {
+    if (!name) {
+       toast({
+        title: 'Name is required',
+        description: 'Please enter a name for the part before generating an image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsGeneratingImage(true);
+    const formData = new FormData();
+    formData.append('name', name);
+    const result = await generateImageAction(null, formData);
+    setIsGeneratingImage(false);
+
+    if (result.error) {
+      toast({
+        title: 'Image Generation Failed',
+        description: result.error,
+        variant: 'destructive',
+      });
+    } else if (result.imageUrl) {
+      setValue('imageUrl', result.imageUrl);
+      toast({
+        title: 'Image Generated',
+        description: 'A new image has been generated for your part.',
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      reset();
+    }
+  }, [open, reset]);
 
   const onSubmit = (data: PartFormValues) => {
     onAddPart(data);
@@ -99,12 +143,26 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="imageUrl">Image URL</Label>
-            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://example.com/image.png" />
-            {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
+             <Label>Image</Label>
+             <div className="flex items-center gap-4">
+               <div className="w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+                  {imageUrl ? (
+                    <Image src={imageUrl} alt={name} width={96} height={96} className="object-cover w-full h-full" />
+                  ) : isGeneratingImage ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  )}
+               </div>
+               <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isGeneratingImage}>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {isGeneratingImage ? 'Generating...' : 'Generate with AI'}
+               </Button>
+             </div>
+             <Input type="hidden" {...register('imageUrl')} />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || isGeneratingImage}>
               {isSubmitting ? 'Saving...' : 'Save Part'}
             </Button>
           </DialogFooter>
