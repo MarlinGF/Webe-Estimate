@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import {
   Card,
@@ -16,17 +18,43 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { estimates } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import type { Estimate, Client } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
 export default function EstimatesPage() {
+  const { firestore, user } = useFirebase();
+
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
+  
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesCollection);
+  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
+
+  useEffect(() => {
+    if (clients) {
+      const byId = clients.reduce((acc, client) => {
+        acc[client.id] = client;
+        return acc;
+      }, {} as {[key: string]: Client});
+      setClientsById(byId);
+    }
+  }, [clients]);
+
+  const combinedEstimates = estimates?.map(e => ({...e, client: clientsById[e.clientId]}));
+
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Approved: 'default',
     Sent: 'secondary',
     Rejected: 'destructive',
     Draft: 'outline',
   };
+
+  const isLoading = isLoadingClients || isLoadingEstimates;
 
   return (
     <Card>
@@ -56,14 +84,15 @@ export default function EstimatesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {estimates.map((estimate) => (
+            {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+            {!isLoading && combinedEstimates?.map((estimate) => (
               <TableRow key={estimate.id}>
                 <TableCell className="font-medium">
                   <Link href={`/estimates/${estimate.id}`} className="text-primary hover:underline">
                     {estimate.estimateNumber}
                   </Link>
                 </TableCell>
-                <TableCell>{estimate.client.name}</TableCell>
+                <TableCell>{estimate.client?.firstName} {estimate.client?.lastName}</TableCell>
                 <TableCell>{estimate.estimateDate}</TableCell>
                 <TableCell>
                   <Badge variant={statusColors[estimate.status] || 'outline'}>{estimate.status}</Badge>

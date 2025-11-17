@@ -25,7 +25,8 @@ export interface LineItem {
 export interface Estimate {
   id: string;
   estimateNumber: string;
-  client: Client;
+  clientId: string;
+  client?: Client;
   estimateDate: string;
   expiryDate: string;
   lineItems: LineItem[];
@@ -39,7 +40,8 @@ export interface Invoice {
   id: string;
   invoiceNumber: string;
   estimateNumber: string;
-  client: Client;
+  clientId: string;
+  client?: Client;
   invoiceDate: string;
   dueDate: string;
   lineItems: LineItem[];

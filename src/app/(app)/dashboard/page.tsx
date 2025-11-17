@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Card,
   CardContent,
@@ -14,26 +16,55 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { estimates, invoices } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { DollarSign, FileText, Receipt, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import type { Estimate, Invoice, Client } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
 export default function Dashboard() {
-  const totalRevenue = invoices
-    .filter((inv) => inv.status === 'Paid')
-    .reduce((sum, inv) => sum + inv.total, 0);
-  const openEstimates = estimates.filter(
-    (est) => est.status === 'Sent' || est.status === 'Draft'
-  ).length;
-  const overdueInvoices = invoices.filter(
-    (inv) => inv.status === 'Overdue'
-  ).length;
-  const clientsCount = new Set(
-    [...estimates, ...invoices].map((doc) => doc.client.id)
-  ).size;
+  const { firestore, user } = useFirebase();
 
-  const recentActivity = [...estimates, ...invoices]
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates')) : null, [firestore, user]);
+  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices')) : null, [firestore, user]);
+
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Omit<Client, 'id'>>(clientsCollection);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesCollection);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id' | 'client'>>(invoicesCollection);
+  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
+
+  useEffect(() => {
+    if (clients) {
+      const byId = clients.reduce((acc, client) => {
+        acc[client.id] = client;
+        return acc;
+      }, {} as {[key: string]: Client});
+      setClientsById(byId);
+    }
+  }, [clients]);
+
+
+  const combinedEstimates = estimates?.map(e => ({...e, client: clientsById[e.clientId]}));
+  const combinedInvoices = invoices?.map(i => ({...i, client: clientsById[i.clientId]}));
+
+  const totalRevenue = combinedInvoices
+    ?.filter((inv) => inv.status === 'Paid')
+    .reduce((sum, inv) => sum + inv.total, 0) ?? 0;
+  
+  const openEstimates = combinedEstimates?.filter(
+    (est) => est.status === 'Sent' || est.status === 'Draft'
+  ).length ?? 0;
+
+  const overdueInvoices = combinedInvoices?.filter(
+    (inv) => inv.status === 'Overdue'
+  ).length ?? 0;
+  
+  const clientsCount = clients?.length ?? 0;
+
+  const recentActivity = [...(combinedEstimates || []), ...(combinedInvoices || [])]
     .sort(
       (a, b) =>
         new Date(
@@ -52,6 +83,11 @@ export default function Dashboard() {
     Rejected: 'destructive',
   };
 
+  const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
+
+  if (isLoading) {
+    return <div>Loading dashboard...</div>
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -128,9 +164,9 @@ export default function Dashboard() {
               {recentActivity.map((doc) => (
                 <TableRow key={'invoiceNumber' in doc ? doc.invoiceNumber : doc.estimateNumber}>
                   <TableCell>
-                    <div className="font-medium">{doc.client.name}</div>
+                    <div className="font-medium">{doc.client?.firstName} {doc.client?.lastName}</div>
                     <div className="hidden text-sm text-muted-foreground md:inline">
-                      {doc.client.email}
+                      {doc.client?.email}
                     </div>
                   </TableCell>
                   <TableCell>

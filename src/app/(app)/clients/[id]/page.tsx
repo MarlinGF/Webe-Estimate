@@ -17,13 +17,12 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { estimates, invoices } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { Client } from '@/lib/types';
+import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
+import type { Client, Estimate, Invoice } from '@/lib/types';
 
 
 export default function ClientDetailPage() {
@@ -32,7 +31,15 @@ export default function ClientDetailPage() {
   const { firestore, user } = useFirebase();
 
   const clientRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'clients', id) : null, [firestore, user, id]);
-  const { data: client, isLoading } = useDoc<Omit<Client, 'id'>>(clientRef);
+  const { data: client, isLoading: isLoadingClient } = useDoc<Omit<Client, 'id'>>(clientRef);
+
+  const estimatesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'estimates'), where('clientId', '==', id)) : null, [firestore, user, id]);
+  const { data: clientEstimates, isLoading: isLoadingEstimates } = useCollection<Omit<Estimate, 'id' | 'client'>>(estimatesRef);
+  
+  const invoicesRef = useMemoFirebase(() => user ? query(collection(firestore, 'users', user.uid, 'invoices'), where('clientId', '==', id)) : null, [firestore, user, id]);
+  const { data: clientInvoices, isLoading: isLoadingInvoices } = useCollection<Omit<Invoice, 'id' | 'client'>>(invoicesRef);
+
+  const isLoading = isLoadingClient || isLoadingEstimates || isLoadingInvoices;
 
   if (isLoading) {
     return <div>Loading client details...</div>
@@ -41,9 +48,6 @@ export default function ClientDetailPage() {
   if (!client) {
     notFound();
   }
-
-  const clientEstimates = estimates.filter((e) => e.client.id === id);
-  const clientInvoices = invoices.filter((i) => i.client.id === id);
 
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Paid: 'default',
@@ -89,7 +93,7 @@ export default function ClientDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clientEstimates.map((estimate) => (
+                  {clientEstimates?.map((estimate) => (
                     <TableRow key={estimate.id}>
                       <TableCell className="font-medium">
                         <Link href={`/estimates/${estimate.id}`} className="hover:underline text-primary">
@@ -129,7 +133,7 @@ export default function ClientDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clientInvoices.map((invoice) => (
+                  {clientInvoices?.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">
                         <Link href={`/invoices/${invoice.id}`} className="hover:underline text-primary">
