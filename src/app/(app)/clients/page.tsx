@@ -30,8 +30,8 @@ import { AddClientDialog } from '@/components/add-client-dialog';
 import { EditClientDialog } from '@/components/edit-client-dialog';
 import { DeleteClientAlert } from '@/components/delete-client-alert';
 import type { Client } from '@/lib/types';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 export default function ClientsPage() {
   const { firestore, user } = useFirebase();
@@ -42,22 +42,22 @@ export default function ClientsPage() {
   const { data: clients, isLoading } = useCollection<Omit<Client, 'id'>>(clientsCollection);
 
   const handleAddClient = (newClient: Omit<Client, 'id' | 'userId'>) => {
-    if (!clientsCollection) return;
-    addDoc(clientsCollection, { ...newClient, userId: user?.uid });
+    if (!clientsCollection || !user) return;
+    addDocumentNonBlocking(clientsCollection, { ...newClient, userId: user.uid });
   };
 
   const handleUpdateClient = (updatedClient: Client) => {
     if (!user) return;
     const clientRef = doc(firestore, 'users', user.uid, 'clients', updatedClient.id);
     const { id, ...clientData } = updatedClient;
-    updateDoc(clientRef, clientData);
+    updateDocumentNonBlocking(clientRef, clientData);
     setEditingClient(null);
   };
 
   const handleDeleteClient = () => {
     if (deletingClientId && user) {
       const clientRef = doc(firestore, 'users', user.uid, 'clients', deletingClientId);
-      deleteDoc(clientRef);
+      deleteDocumentNonBlocking(clientRef);
       setDeletingClientId(null);
     }
   };
@@ -157,3 +157,5 @@ export default function ClientsPage() {
     </>
   );
 }
+
+    
