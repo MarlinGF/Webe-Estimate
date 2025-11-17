@@ -70,9 +70,6 @@ export default function ServicesPage() {
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Services</CardTitle>
-          <CardDescription>
-            Manage your service templates for quick addition to estimates.
-          </CardDescription>
         </div>
         <AddServiceDialog onAddService={handleAddService}>
           <Button size="sm" className="gap-1">

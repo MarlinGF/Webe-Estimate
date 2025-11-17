@@ -69,9 +69,6 @@ export default function PartsPage() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Parts</CardTitle>
-            <CardDescription>
-              Manage your parts and materials for cost tracking.
-            </CardDescription>
           </div>
           <AddPartDialog onAddPart={handleAddPart}>
             <Button size="sm" className="gap-1">
