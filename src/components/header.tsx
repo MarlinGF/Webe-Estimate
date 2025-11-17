@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 export function Header({ title }: { title?: string }) {
   return (
-    <header className="flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 sticky top-0 z-30">
+    <header className="flex h-16 items-center gap-4 border-b border-sidebar-border bg-sidebar text-sidebar-foreground px-4 md:px-6 sticky top-0 z-30">
       <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <Link
           href="/dashboard"
@@ -28,7 +28,7 @@ export function Header({ title }: { title?: string }) {
             <span className="sr-only">Toggle navigation menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left">
+        <SheetContent side="left" className="bg-sidebar text-sidebar-foreground">
           <nav className="grid gap-6 text-lg font-medium">
              <Link
                 href="#"
