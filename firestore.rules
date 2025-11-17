@@ -3,10 +3,10 @@
  * stored under `/users/{userId}`. Services and parts are globally accessible.
  *
  * Data Structure:
- * - `/users/{userId}/clients/{clientId}`: Stores client information, owned by the specified user.
- * - `/users/{userId}/estimates/{estimateId}`: Stores estimates for a client, owned by the specified user.
- * - `/users/{userId}/invoices/{invoiceId}`: Stores invoices for an estimate, owned by the specified user.
- * - `/users/{userId}/estimates/{estimateId}/lineItems/{lineItemId}`: Stores line items for an estimate, owned by the specified user.
+ * - `users/{userId}/clients/{clientId}`: Stores client information, owned by the specified user.
+ * - `users/{userId}/estimates/{estimateId}`: Stores estimates for a client, owned by the specified user.
+ * - `users/{userId}/invoices/{invoiceId}`: Stores invoices for an estimate, owned by the specified user.
+ * - `users/{userId}/estimates/{estimateId}/lineItems/{lineItemId}`: Stores line items for an estimate, owned by the specified user.
  * - `/services/{serviceId}`: Stores publicly accessible service information.
  * - `/parts/{partId}`: Stores publicly accessible part information.
  *
@@ -19,7 +19,7 @@
  * -  The `clientId`, `estimateId`, and `invoiceId` are denormalized into subcollection documents to avoid costly `get()` calls in security rules.
  *
  * Structural Segregation:
- * - User-specific data (clients, estimates, invoices, line items) is stored under `/users/{userId}`.
+ * - User-specific data (clients, estimates, invoices, line items) is stored under `users/{userId}`.
  * - Public data (services, parts) is stored in top-level collections.
  */
 rules_version = '2';
@@ -56,7 +56,7 @@ service cloud.firestore {
      * @description
      *  - Allows a user to create, read, update, and delete their own client data.
      *  - Enforces that the `userId` path parameter matches the authenticated user's ID for ownership.
-     * @path /users/{userId}/clients/{clientId}
+     * @path users/{userId}/clients/{clientId}
      * @allow (create) - User 'user_abc' creates a new client with ID 'client_123' under their user ID: `request.auth.uid == 'user_abc'` and `request.resource.data.id == 'client_123'`.
      * @allow (get) - User 'user_abc' reads their own client data.
      * @allow (update) - User 'user_abc' updates their own client data, ensuring the `id` field remains unchanged.
@@ -66,42 +66,36 @@ service cloud.firestore {
      * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId}/clients/{clientId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow get, list, delete: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
     }
     
     match /users/{userId}/estimates/{estimateId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow get, list, delete: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
       
       match /lineItems/{lineItemId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
         allow create: if isOwner(userId);
-        allow update: if isExistingOwner(userId);
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
       }
     }
     
     match /users/{userId}/invoices/{invoiceId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow get, list, delete: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow update: if isOwner(userId) && request.resource.data.userId == resource.data.userId;
 
       match /lineItems/{lineItemId} {
         allow get: if isOwner(userId);
         allow list: if isOwner(userId);
         allow create: if isOwner(userId);
-        allow update: if isExistingOwner(userId);
-        allow delete: if isExistingOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId);
       }
     }
 
@@ -136,3 +130,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

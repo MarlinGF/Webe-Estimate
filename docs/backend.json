@@ -34,13 +34,18 @@
         "notes": {
           "type": "string",
           "description": "Any notes about the client."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this client."
         }
       },
       "required": [
         "id",
         "firstName",
         "lastName",
-        "email"
+        "email",
+        "userId"
       ]
     },
     "Estimate": {
@@ -69,6 +74,10 @@
         "status": {
           "type": "string",
           "description": "Status of the estimate (e.g., Draft, Sent, Approved, Rejected)."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this estimate."
         }
       },
       "required": [
@@ -76,7 +85,8 @@
         "clientId",
         "estimateDate",
         "totalAmount",
-        "status"
+        "status",
+        "userId"
       ]
     },
     "Invoice": {
@@ -110,6 +120,10 @@
         "paymentStatus": {
           "type": "string",
           "description": "Payment status of the invoice (e.g., Pending, Paid, Overdue)."
+        },
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who owns this invoice."
         }
       },
       "required": [
@@ -118,7 +132,8 @@
         "invoiceDate",
         "dueDate",
         "totalAmount",
-        "paymentStatus"
+        "paymentStatus",
+        "userId"
       ]
     },
     "LineItem": {
@@ -239,138 +254,68 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/clients/{clientId}",
+        "path": "users/{userId}/clients/{clientId}",
         "definition": {
           "entityName": "Client",
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores client data specific to a user. Uses path-based ownership for security. The `userId` parameter identifies the owner.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the client."
-            },
-            {
-              "name": "clientId",
-              "description": "The ID of the client document."
-            }
-          ]
+          "description": "Stores client data specific to a user. Uses path-based ownership for security. The `userId` parameter identifies the owner."
         }
       },
       {
-        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}",
+        "path": "users/{userId}/estimates/{estimateId}",
         "definition": {
           "entityName": "Estimate",
           "schema": {
             "$ref": "#/backend/entities/Estimate"
           },
-          "description": "Stores estimates associated with a specific client. Uses path-based ownership for security. Includes denormalized `clientId` for efficient querying.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the client and estimate."
-            },
-            {
-              "name": "clientId",
-              "description": "The ID of the client associated with the estimate."
-            },
-            {
-              "name": "estimateId",
-              "description": "The ID of the estimate document."
-            }
-          ]
+          "description": "Stores estimates associated with a specific client. Uses path-based ownership for security. Includes denormalized `clientId` for efficient querying."
         }
       },
       {
-        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}/invoices/{invoiceId}",
+        "path": "users/{userId}/invoices/{invoiceId}",
         "definition": {
           "entityName": "Invoice",
           "schema": {
             "$ref": "#/backend/entities/Invoice"
           },
-          "description": "Stores invoices generated from estimates. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the client, estimate and invoice."
-            },
-            {
-              "name": "clientId",
-              "description": "The ID of the client associated with the invoice."
-            },
-            {
-              "name": "estimateId",
-              "description": "The ID of the estimate associated with the invoice."
-            },
-            {
-              "name": "invoiceId",
-              "description": "The ID of the invoice document."
-            }
-          ]
+          "description": "Stores invoices generated from estimates. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying."
         }
       },
       {
-        "path": "/users/{userId}/clients/{clientId}/estimates/{estimateId}/lineItems/{lineItemId}",
+        "path": "users/{userId}/estimates/{estimateId}/lineItems/{lineItemId}",
         "definition": {
           "entityName": "LineItem",
           "schema": {
             "$ref": "#/backend/entities/LineItem"
           },
-          "description": "Stores line items for a specific estimate. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the client, estimate and line item."
-            },
-            {
-              "name": "clientId",
-              "description": "The ID of the client associated with the line item."
-            },
-            {
-              "name": "estimateId",
-              "description": "The ID of the estimate associated with the line item."
-            },
-            {
-              "name": "lineItemId",
-              "description": "The ID of the line item document."
-            }
-          ]
+          "description": "Stores line items for a specific estimate. Uses path-based ownership. Includes denormalized `clientId` and `estimateId` for efficient querying."
         }
       },
       {
-        "path": "/services/{serviceId}",
+        "path": "services/{serviceId}",
         "definition": {
           "entityName": "Service",
           "schema": {
             "$ref": "#/backend/entities/Service"
           },
-          "description": "Stores services offered. Globally accessible data.",
-          "params": [
-            {
-              "name": "serviceId",
-              "description": "The ID of the service document."
-            }
-          ]
+          "description": "Stores services offered. Globally accessible data."
         }
       },
       {
-        "path": "/parts/{partId}",
+        "path": "parts/{partId}",
         "definition": {
           "entityName": "Part",
           "schema": {
             "$ref": "#/backend/entities/Part"
           },
-          "description": "Stores parts used in services. Globally accessible data.",
-          "params": [
-            {
-              "name": "partId",
-              "description": "The ID of the part document."
-            }
-          ]
+          "description": "Stores parts used in services. Globally accessible data."
         }
       }
     ],
     "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It also adheres to the design strategy mandates, including denormalization, structural segregation and access modeling.\n\nAuthorization Independence is achieved through denormalization. For instance, instead of relying on parent document attributes to authorize access to subcollections, relevant authorization data (like `ownerId` or a `members` map) is copied into the subcollection documents, eliminating the need for `get()` calls in security rules. This ensures that authorization checks are self-contained and atomic.\n\nStructural Segregation is implemented by storing different types of data in separate collections based on their access requirements. User-specific data is stored under `/users/{userId}`, collaborative data utilizes Membership Maps, and global roles are managed through dedicated collections like `/roles_admin/{uid}`. This approach simplifies security rules by ensuring that all documents within a collection share a homogeneous security posture.\n\nAccess Modeling follows consistent patterns. Private data is managed through path-based ownership (e.g., `/users/{userId}/clients/{clientId}`). Collaborative access is controlled via Membership Maps (denormalized where necessary). Global roles are implemented using existence checks in dedicated role collections.\n\nQAPs (Rules are not Filters) are supported by the structural segregation. Since each collection has a uniform security posture, list operations can be secured without filtering based on document content.\n\nSpecifically, this structure facilitates easy querying of clients, estimates, and invoices associated with a particular user. The relationships between entities (e.g., a Client having multiple Estimates) are captured using hierarchical paths, promoting straightforward and efficient security rule design."
   }
 }
+
+    
