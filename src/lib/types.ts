@@ -16,7 +16,10 @@ export interface Item {
 }
 
 export interface Service extends Item {}
-export interface Part extends Item {}
+
+export interface Part extends Item {
+    cost: number;
+}
 
 export interface LineItem {
   id: string;

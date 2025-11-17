@@ -18,15 +18,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Part } from '@/lib/types';
+import { AddPartDialog } from '@/components/add-part-dialog';
 
 export default function PartsPage() {
   const { firestore } = useFirebase();
   
   const partsCollection = useMemoFirebase(() => collection(firestore, 'parts'), [firestore]);
   const { data: parts, isLoading } = useCollection<Part>(partsCollection);
+
+  const handleAddPart = (newPart: Omit<Part, 'id'>) => {
+    if (!partsCollection) return;
+    addDocumentNonBlocking(partsCollection, newPart);
+  };
 
   return (
     <Card>
@@ -37,10 +43,12 @@ export default function PartsPage() {
             Manage your parts and materials for cost tracking.
           </CardDescription>
         </div>
-        <Button size="sm" className="gap-1">
-          <PlusCircle className="h-4 w-4" />
-          Add Part
-        </Button>
+        <AddPartDialog onAddPart={handleAddPart}>
+          <Button size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Add Part
+          </Button>
+        </AddPartDialog>
       </CardHeader>
       <CardContent>
         <Table>
@@ -48,15 +56,17 @@ export default function PartsPage() {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
+              <TableHead>Cost</TableHead>
               <TableHead className="text-right">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
             {!isLoading && parts?.map((part) => (
               <TableRow key={part.id}>
                 <TableCell className="font-medium">{part.name}</TableCell>
                 <TableCell className="text-muted-foreground">{part.description}</TableCell>
+                <TableCell>{formatCurrency(part.cost)}</TableCell>
                 <TableCell className="text-right">
                   {formatCurrency(part.price)}
                 </TableCell>

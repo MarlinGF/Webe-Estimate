@@ -18,15 +18,21 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Service } from '@/lib/types';
+import { AddServiceDialog } from '@/components/add-service-dialog';
 
 export default function ServicesPage() {
   const { firestore } = useFirebase();
   
   const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
   const { data: services, isLoading } = useCollection<Service>(servicesCollection);
+
+  const handleAddService = (newService: Omit<Service, 'id'>) => {
+    if(!servicesCollection) return;
+    addDocumentNonBlocking(servicesCollection, newService);
+  };
 
   return (
     <Card>
@@ -37,10 +43,12 @@ export default function ServicesPage() {
             Manage your service templates for quick addition to estimates.
           </CardDescription>
         </div>
-        <Button size="sm" className="gap-1">
-          <PlusCircle className="h-4 w-4" />
-          Add Service
-        </Button>
+        <AddServiceDialog onAddService={handleAddService}>
+          <Button size="sm" className="gap-1">
+            <PlusCircle className="h-4 w-4" />
+            Add Service
+          </Button>
+        </AddServiceDialog>
       </CardHeader>
       <CardContent>
         <Table>
