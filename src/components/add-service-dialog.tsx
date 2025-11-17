@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -19,9 +19,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { ImageIcon, Loader2, Sparkles } from 'lucide-react';
+import { ImageIcon, Upload } from 'lucide-react';
 import type { Service } from '@/lib/types';
-import { generateImageAction } from '@/lib/actions';
 
 
 const serviceSchema = z.object({
@@ -31,7 +30,7 @@ const serviceSchema = z.object({
     (a) => parseFloat(z.string().parse(a)),
     z.number().positive('Price must be a positive number')
   ),
-  imageUrl: z.string().url().optional().or(z.literal('')),
+  imageUrl: z.string().optional(),
 });
 
 type ServiceFormValues = Omit<Service, 'id'>;
@@ -43,7 +42,7 @@ interface AddServiceDialogProps {
 
 export function AddServiceDialog({ onAddService, children }: AddServiceDialogProps) {
   const [open, setOpen] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const {
     register,
@@ -59,35 +58,25 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
   const name = watch('name');
   const imageUrl = watch('imageUrl');
 
-  const handleGenerateImage = async () => {
-    if (!name) {
-       toast({
-        title: 'Name is required',
-        description: 'Please enter a name for the service before generating an image.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setIsGeneratingImage(true);
-    const formData = new FormData();
-    formData.append('name', name);
-    const result = await generateImageAction(null, formData);
-    setIsGeneratingImage(false);
-
-    if (result.error) {
-      toast({
-        title: 'Image Generation Failed',
-        description: result.error,
-        variant: 'destructive',
-      });
-    } else if (result.imageUrl) {
-      setValue('imageUrl', result.imageUrl);
-      toast({
-        title: 'Image Generated',
-        description: 'A new image has been generated for your service.',
-      });
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+       if (file.size > 1024 * 1024) { // 1MB limit
+        toast({
+          title: 'Image too large',
+          description: 'Please select an image smaller than 1MB.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setValue('imageUrl', reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
+
 
   useEffect(() => {
     if (!open) {
@@ -137,22 +126,27 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
              <div className="flex items-center gap-4">
                <div className="w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                   {imageUrl ? (
-                    <Image src={imageUrl} alt={name} width={96} height={96} className="object-cover w-full h-full" />
-                  ) : isGeneratingImage ? (
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <Image src={imageUrl} alt={name || 'Service image'} width={96} height={96} className="object-cover w-full h-full" />
                   ) : (
                     <ImageIcon className="h-8 w-8 text-muted-foreground" />
                   )}
                </div>
-               <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isGeneratingImage}>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  {isGeneratingImage ? 'Generating...' : 'Generate with AI'}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload
                </Button>
+               <Input 
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif"
+                  onChange={handleImageUpload}
+                />
              </div>
              <Input type="hidden" {...register('imageUrl')} />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting || isGeneratingImage}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Service'}
             </Button>
           </DialogFooter>

@@ -2,7 +2,6 @@
 'use server';
 
 import { generateItemDescription } from '@/ai/flows/generate-item-description';
-import { generateItemImage } from '@/ai/flows/generate-item-image';
 import { z } from 'zod';
 
 const descriptionSchema = z.object({
@@ -33,37 +32,5 @@ export async function generateDescriptionAction(
   } catch (error) {
     console.error(error);
     return { description: '', error: 'An unexpected error occurred.' };
-  }
-}
-
-
-const imageSchema = z.object({
-  name: z.string().min(1, { message: 'Item name is required to generate an image.' }),
-});
-
-export async function generateImageAction(
-  prevState: any,
-  formData: FormData
-) {
-  const validatedFields = imageSchema.safeParse({
-    name: formData.get('name'),
-  });
-
-  if (!validatedFields.success) {
-    return {
-      imageUrl: '',
-      error: validatedFields.error.flatten().fieldErrors.name?.[0],
-    };
-  }
-
-  try {
-    const result = await generateItemImage({ name: validatedFields.data.name });
-    if (result.imageUrl) {
-      return { imageUrl: result.imageUrl, error: null };
-    }
-    return { imageUrl: '', error: 'Could not generate an image. Please try again.' };
-  } catch (error) {
-    console.error(error);
-    return { imageUrl: '', error: 'An unexpected error occurred.' };
   }
 }
