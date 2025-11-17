@@ -74,7 +74,7 @@ export function EditServiceDialog({ service, onUpdateService, onOpenChange }: Ed
       }
       const reader = new FileReader();
       reader.onloadend = () => {
-        setValue('imageUrl', reader.result as string);
+        setValue('imageUrl', reader.result as string, { shouldDirty: true });
       };
       reader.readAsDataURL(file);
     }
@@ -135,7 +135,7 @@ export function EditServiceDialog({ service, onUpdateService, onOpenChange }: Ed
                   onChange={handleImageUpload}
                 />
              </div>
-             <Input type="hidden" {...register('imageUrl')} />
+             <input type="hidden" {...register('imageUrl')} />
           </div>
           <DialogFooter>
              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
