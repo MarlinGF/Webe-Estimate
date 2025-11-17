@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import {
   Card,
@@ -104,7 +104,7 @@ export default function ClientsPage() {
                       href={`/clients/${client.id}`}
                       className="hover:underline text-primary"
                     >
-                      {client.name}
+                      {client.firstName} {client.lastName}
                     </Link>
                   </TableCell>
                   <TableCell>{client.email}</TableCell>
@@ -157,5 +157,3 @@ export default function ClientsPage() {
     </>
   );
 }
-
-    

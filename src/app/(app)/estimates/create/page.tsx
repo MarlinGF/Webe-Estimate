@@ -164,7 +164,7 @@ export default function CreateEstimatePage() {
                         <SelectContent>
                           {clientList?.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
-                              {client.name}
+                              {client.firstName} {client.lastName}
                             </SelectItem>
                           ))}
                         </SelectContent>

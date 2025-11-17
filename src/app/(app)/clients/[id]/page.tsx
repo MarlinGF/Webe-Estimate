@@ -58,7 +58,7 @@ export default function ClientDetailPage() {
     <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{client.name}</CardTitle>
+          <CardTitle className="text-2xl">{client.firstName} {client.lastName}</CardTitle>
           <CardDescription>
             {client.email} &middot; {client.phone}
           </CardDescription>
@@ -75,7 +75,7 @@ export default function ClientDetailPage() {
             <CardHeader>
               <CardTitle>Estimates</CardTitle>
               <CardDescription>
-                All estimates associated with {client.name}.
+                All estimates associated with {client.firstName} {client.lastName}.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -115,7 +115,7 @@ export default function ClientDetailPage() {
             <CardHeader>
               <CardTitle>Invoices</CardTitle>
               <CardDescription>
-                All invoices associated with {client.name}.
+                All invoices associated with {client.firstName} {client.lastName}.
               </CardDescription>
             </CardHeader>
             <CardContent>

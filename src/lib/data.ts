@@ -1,10 +1,10 @@
 import type { Client, Estimate, Invoice, Item, Project } from './types';
 
-export const clients: Client[] = [
-  { id: 'cli-1', name: 'Innovate LLC', email: 'contact@innovatellc.com', phone: '555-1234', address: '123 Tech Park, Silicon Valley, CA' },
-  { id: 'cli-2', name: 'Solutions Inc.', email: 'support@solutions.io', phone: '555-5678', address: '456 Business Blvd, New York, NY' },
-  { id: 'cli-3', name: 'Creative Co.', email: 'hello@creative.co', phone: '555-8765', address: '789 Art Lane, Los Angeles, CA' },
-  { id: 'cli-4', name: 'Synergy Group', email: 'info@synergy.com', phone: '555-4321', address: '321 Fusion Way, Chicago, IL' },
+export const clients: Omit<Client, 'id'>[] = [
+  { firstName: 'Innovate', lastName: 'LLC', email: 'contact@innovatellc.com', phone: '555-1234', address: '123 Tech Park, Silicon Valley, CA' },
+  { firstName: 'Solutions', lastName: 'Inc.', email: 'support@solutions.io', phone: '555-5678', address: '456 Business Blvd, New York, NY' },
+  { firstName: 'Creative', lastName: 'Co.', email: 'hello@creative.co', phone: '555-8765', address: '789 Art Lane, Los Angeles, CA' },
+  { firstName: 'Synergy', lastName: 'Group', email: 'info@synergy.com', phone: '555-4321', address: '321 Fusion Way, Chicago, IL' },
 ];
 
 export const services: Item[] = [
@@ -19,6 +19,8 @@ export const parts: Item[] = [
   { id: 'par-2', name: 'Premium UI Kit License', description: 'Single project license for a premium UI component library.', price: 250 },
   { id: 'par-3', name: 'Cloud Server (Standard Tier)', description: 'Monthly cost for a standard tier cloud virtual private server.', price: 80 },
 ];
+
+const mockClients: Client[] = clients.map((c, i) => ({ ...c, id: `cli-${i+1}`}));
 
 const estimate1LineItems = [
   { id: 'li-1', description: 'Web Design Consultation', quantity: 2, price: 150 },
@@ -40,7 +42,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-1',
     estimateNumber: 'EST-2024-001',
-    client: clients[0],
+    client: mockClients[0],
     estimateDate: '2024-07-15',
     expiryDate: '2024-08-14',
     lineItems: estimate1LineItems,
@@ -52,7 +54,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-2',
     estimateNumber: 'EST-2024-002',
-    client: clients[1],
+    client: mockClients[1],
     estimateDate: '2024-07-18',
     expiryDate: '2024-08-17',
     lineItems: estimate2LineItems,
@@ -64,7 +66,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-3',
     estimateNumber: 'EST-2024-003',
-    client: clients[2],
+    client: mockClients[2],
     estimateDate: '2024-07-20',
     expiryDate: '2024-08-19',
     lineItems: [{ id: 'li-7', description: 'Full-Stack Project Retainer', quantity: 1, price: 4500 }],
@@ -80,7 +82,7 @@ export const invoices: Invoice[] = [
     id: 'inv-1',
     invoiceNumber: 'INV-2024-001',
     estimateNumber: 'EST-2024-001',
-    client: clients[0],
+    client: mockClients[0],
     invoiceDate: '2024-07-20',
     dueDate: '2024-08-19',
     lineItems: estimate1LineItems,
@@ -94,7 +96,7 @@ export const invoices: Invoice[] = [
     id: 'inv-2',
     invoiceNumber: 'INV-2024-002',
     estimateNumber: 'EST-2024-004', // Made up for example
-    client: clients[3],
+    client: mockClients[3],
     invoiceDate: '2024-06-01',
     dueDate: '2024-07-01',
     lineItems: [{ id: 'li-8', description: 'Emergency Server Maintenance', quantity: 5, price: 200 }],
@@ -108,7 +110,7 @@ export const invoices: Invoice[] = [
     id: 'inv-3',
     invoiceNumber: 'INV-2024-003',
     estimateNumber: 'EST-2024-005', // Made up for example
-    client: clients[1],
+    client: mockClients[1],
     invoiceDate: '2024-07-22',
     dueDate: '2024-08-21',
     lineItems: [{ id: 'li-9', description: 'Marketing Site Development', quantity: 1, price: 6000 }],

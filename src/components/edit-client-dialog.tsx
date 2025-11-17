@@ -19,7 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { Client } from '@/lib/types';
 
 const clientSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -53,7 +54,7 @@ export function EditClientDialog({ client, onUpdateClient, onOpenChange }: EditC
     onUpdateClient({ ...client, ...data });
     toast({
       title: 'Client Updated',
-      description: `${data.name} has been successfully updated.`,
+      description: `${data.firstName} ${data.lastName} has been successfully updated.`,
     });
     onOpenChange(false);
   };
@@ -68,12 +69,21 @@ export function EditClientDialog({ client, onUpdateClient, onOpenChange }: EditC
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" {...register('name')} />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input id="firstName" {...register('firstName')} />
+              {errors.firstName && (
+                <p className="text-sm text-destructive">{errors.firstName.message}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input id="lastName" {...register('lastName')} />
+              {errors.lastName && (
+                <p className="text-sm text-destructive">{errors.lastName.message}</p>
+              )}
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">Email</Label>
