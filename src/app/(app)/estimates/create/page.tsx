@@ -30,12 +30,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { clients } from '@/lib/data';
+import { clients, services, parts } from '@/lib/data';
 import { formatCurrency } from '@/lib/utils';
 import { AiDescriptionGenerator } from '@/components/ai-description-generator';
-import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Trash2, PlusCircle, ArrowLeft, Library } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
+import type { Item, Client } from '@/lib/types';
 
 type FormValues = {
   clientId: string;
@@ -48,6 +50,8 @@ type FormValues = {
 export default function CreateEstimatePage() {
   const router = useRouter();
   const { toast } = useToast();
+  const [clientList] = useState<Client[]>(clients);
+
   const {
     register,
     control,
@@ -68,7 +72,7 @@ export default function CreateEstimatePage() {
     },
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: 'lineItems',
   });
@@ -89,6 +93,16 @@ export default function CreateEstimatePage() {
     setTax(newTax);
     setTotal(newSubtotal + newTax);
   }, [watchLineItems]);
+
+  const handleAddItemsFromLibrary = (items: Item[]) => {
+    // Check if the first default line item is empty, if so, remove it.
+    if (fields.length === 1 && !watchLineItems[0].description && watchLineItems[0].price === 0) {
+      remove(0);
+    }
+    items.forEach(item => {
+        append({ description: item.name, quantity: 1, price: item.price });
+    });
+  };
 
   const onSubmit = (data: FormValues) => {
     console.log(data);
@@ -141,7 +155,7 @@ export default function CreateEstimatePage() {
                           <SelectValue placeholder="Select a client" />
                         </SelectTrigger>
                         <SelectContent>
-                          {clients.map((client) => (
+                          {clientList.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.name}
                             </SelectItem>
@@ -250,7 +264,7 @@ export default function CreateEstimatePage() {
                 </TableBody>
               </Table>
             </CardContent>
-            <CardFooter className="justify-start border-t p-4">
+            <CardFooter className="justify-start border-t p-4 gap-2">
               <Button
                 size="sm"
                 variant="ghost"
@@ -262,6 +276,11 @@ export default function CreateEstimatePage() {
                 <PlusCircle className="h-3.5 w-3.5" />
                 Add Line Item
               </Button>
+              <AddFromLibraryDialog
+                services={services}
+                parts={parts}
+                onAddItems={handleAddItemsFromLibrary}
+              />
             </CardFooter>
           </Card>
         </div>
