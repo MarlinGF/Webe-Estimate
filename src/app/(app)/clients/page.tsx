@@ -14,9 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { clients } from '@/lib/data';
-import { PlusCircle } from 'lucide-react';
+import { AddClientDialog } from '@/components/add-client-dialog';
 
 export default function ClientsPage() {
   return (
@@ -28,10 +27,7 @@ export default function ClientsPage() {
             Manage your clients and view their history.
           </CardDescription>
         </div>
-        <Button size="sm" className="gap-1">
-          <PlusCircle className="h-4 w-4" />
-          Add Client
-        </Button>
+        <AddClientDialog />
       </CardHeader>
       <CardContent>
         <Table>
