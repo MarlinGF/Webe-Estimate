@@ -51,7 +51,7 @@ export default function ServicesPage() {
     if (!firestore) return;
     const serviceRef = doc(firestore, 'services', updatedService.id);
     const { id, ...serviceData } = updatedService;
-    updateDocumentNonBlocking(serviceRef, serviceData);
+    updateDocumentNonBlocking(serviceRef, { ...serviceData });
     setEditingService(null);
   };
 

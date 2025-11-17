@@ -51,7 +51,7 @@ export default function PartsPage() {
     if (!firestore) return;
     const partRef = doc(firestore, 'parts', updatedPart.id);
     const { id, ...partData } = updatedPart;
-    updateDocumentNonBlocking(partRef, partData);
+    updateDocumentNonBlocking(partRef, { ...partData });
     setEditingPart(null);
   };
   
