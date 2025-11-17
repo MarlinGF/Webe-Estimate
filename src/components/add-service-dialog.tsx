@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { ImageIcon, Loader2, PlusCircle, Sparkles } from 'lucide-react';
+import { ImageIcon, Loader2, Sparkles } from 'lucide-react';
 import type { Service } from '@/lib/types';
 import { generateImageAction } from '@/lib/actions';
 
@@ -31,7 +31,7 @@ const serviceSchema = z.object({
     (a) => parseFloat(z.string().parse(a)),
     z.number().positive('Price must be a positive number')
   ),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 
 type ServiceFormValues = Omit<Service, 'id'>;
