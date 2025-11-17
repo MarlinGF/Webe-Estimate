@@ -37,8 +37,8 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
 import type { Item, Client, Service, Part } from '@/lib/types';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, writeBatch, addDoc } from 'firebase/firestore';
 
 
 type FormValues = {
@@ -115,7 +115,7 @@ export default function CreateEstimatePage() {
     });
   };
 
-  const onSubmit = (data: FormValues) => {
+ const onSubmit = async (data: FormValues) => {
     if (!user || !firestore) return;
     
     const estimateData = {
@@ -129,37 +129,34 @@ export default function CreateEstimatePage() {
 
     const { lineItems, ...estimateCore } = estimateData;
     
-    const estimatesCollectionRef = collection(firestore, 'users', user.uid, 'estimates');
-
-    addDocumentNonBlocking(estimatesCollectionRef, estimateCore)
-      .then(newEstimateRef => {
-        if (newEstimateRef) {
-          const batch = writeBatch(firestore);
-          const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
-          
-          lineItems.forEach(item => {
+    try {
+        const estimatesCollectionRef = collection(firestore, 'users', user.uid, 'estimates');
+        const newEstimateRef = await addDoc(estimatesCollectionRef, estimateCore);
+        
+        const batch = writeBatch(firestore);
+        const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
+        
+        lineItems.forEach(item => {
             const newItemRef = doc(lineItemsCollectionRef);
             batch.set(newItemRef, item);
-          });
-          
-          return batch.commit();
-        }
-      })
-      .then(() => {
+        });
+        
+        await batch.commit();
+
         toast({
-          title: "Estimate Created",
-          description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
+            title: "Estimate Created",
+            description: `Estimate ${data.estimateNumber} has been saved as a draft.`,
         });
         router.push('/estimates');
-      })
-      .catch(e => {
+
+    } catch (e) {
         console.error("Error creating estimate:", e);
         toast({
             title: "Error",
             description: "There was a problem creating the estimate.",
             variant: "destructive"
         });
-      });
+    }
   };
 
   return (
@@ -369,5 +366,3 @@ export default function CreateEstimatePage() {
     </form>
   );
 }
-
-    
