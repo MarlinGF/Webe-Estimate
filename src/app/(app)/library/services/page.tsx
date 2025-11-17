@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, ImageIcon } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Service } from '@/lib/types';
@@ -54,15 +55,31 @@ export default function ServicesPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
               <TableHead className="text-right">Price</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+            {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
             {!isLoading && services?.map((service) => (
               <TableRow key={service.id}>
+                <TableCell>
+                  {service.imageUrl ? (
+                    <Image
+                      src={service.imageUrl}
+                      alt={service.name}
+                      width={64}
+                      height={64}
+                      className="rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-md bg-muted">
+                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{service.name}</TableCell>
                 <TableCell className="text-muted-foreground">{service.description}</TableCell>
                 <TableCell className="text-right">

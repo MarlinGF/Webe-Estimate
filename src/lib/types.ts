@@ -13,6 +13,7 @@ export interface Item {
   name:string;
   description: string;
   price: number;
+  imageUrl?: string;
 }
 
 export interface Service extends Item {}

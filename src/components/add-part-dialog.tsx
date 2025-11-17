@@ -32,6 +32,7 @@ const partSchema = z.object({
     (a) => parseFloat(z.string().parse(a)),
     z.number().positive('Cost must be a positive number')
   ),
+  imageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
 });
 
 type PartFormValues = Omit<Part, 'id'>;
@@ -96,6 +97,11 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
                 <Input id="cost" type="number" step="0.01" {...register('cost')} />
                 {errors.cost && <p className="text-sm text-destructive">{errors.cost.message}</p>}
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="imageUrl">Image URL</Label>
+            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://example.com/image.png" />
+            {errors.imageUrl && <p className="text-sm text-destructive">{errors.imageUrl.message}</p>}
           </div>
           <DialogFooter>
             <Button type="submit" disabled={isSubmitting}>

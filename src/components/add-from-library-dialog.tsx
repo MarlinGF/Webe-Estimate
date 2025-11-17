@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,7 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/lib/utils';
 import type { Item } from '@/lib/types';
-import { Library, PlusCircle } from 'lucide-react';
+import { Library, PlusCircle, ImageIcon } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 
 interface AddFromLibraryDialogProps {
@@ -76,6 +77,7 @@ export function AddFromLibraryDialog({
         <TableHeader>
           <TableRow>
             <TableHead className="w-[40px]"></TableHead>
+            <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="text-right">Price</TableHead>
           </TableRow>
@@ -89,6 +91,21 @@ export function AddFromLibraryDialog({
                   onCheckedChange={(checked) => handleSelect(item, checked)}
                 />
               </TableCell>
+              <TableCell>
+                  {item.imageUrl ? (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      className="rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
+                </TableCell>
               <TableCell>
                 <div className="font-medium">{item.name}</div>
                 <div className="text-sm text-muted-foreground">{item.description}</div>
