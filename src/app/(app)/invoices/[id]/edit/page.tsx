@@ -43,7 +43,7 @@ import { collection, doc, writeBatch, updateDoc, getDocs } from 'firebase/firest
 
 type FormValues = {
   clientId: string;
-  taxId: string;
+  taxId: string | 'none';
   invoiceNumber: string;
   invoiceDate: string;
   dueDate: string;
@@ -93,14 +93,23 @@ export default function EditInvoicePage() {
   });
 
   useEffect(() => {
-    if (invoice && taxes) {
-        const taxId = taxes.find(t => invoice.tax > 0 && t.rate === invoice.tax / invoice.subtotal)?.id || 'none';
-        reset({ ...invoice, taxId });
+    if (invoice) {
+        const initialFormValues: any = { ...invoice };
+        if (taxes && invoice.taxId) {
+            initialFormValues.taxId = invoice.taxId;
+        } else if (taxes && invoice.tax > 0 && invoice.subtotal > 0) {
+            const taxRate = invoice.tax / invoice.subtotal;
+            const matchingTax = taxes.find(t => Math.abs(t.rate - taxRate) < 0.0001);
+            initialFormValues.taxId = matchingTax?.id || 'none';
+        } else {
+            initialFormValues.taxId = 'none';
+        }
+        reset(initialFormValues);
     }
     if (lineItemsData) {
         replace(lineItemsData.map(({id, ...rest}) => rest));
     }
-  }, [invoice, lineItemsData, reset, replace, taxes]);
+}, [invoice, lineItemsData, reset, replace, taxes]);
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -146,6 +155,7 @@ export default function EditInvoicePage() {
       subtotal,
       tax: taxAmount,
       total,
+      taxId: data.taxId === 'none' ? null : data.taxId,
     };
 
     const { lineItems, ...invoiceCore } = invoiceData;
@@ -467,3 +477,5 @@ export default function EditInvoicePage() {
     </form>
   );
 }
+
+    

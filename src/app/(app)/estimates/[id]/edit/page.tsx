@@ -43,7 +43,7 @@ import { collection, doc, writeBatch, updateDoc, getDocs } from 'firebase/firest
 
 type FormValues = {
   clientId: string;
-  taxId: string;
+  taxId: string | 'none';
   estimateNumber: string;
   estimateDate: string;
   expiryDate: string;
@@ -93,14 +93,23 @@ export default function EditEstimatePage() {
   });
 
   useEffect(() => {
-    if (estimate && taxes) {
-        const taxId = taxes.find(t => estimate.tax > 0 && t.rate === estimate.tax / estimate.subtotal)?.id || 'none';
-        reset({ ...estimate, taxId });
+    if (estimate) {
+        const initialFormValues: any = { ...estimate };
+        if (taxes && estimate.taxId) {
+            initialFormValues.taxId = estimate.taxId;
+        } else if (taxes && estimate.tax > 0 && estimate.subtotal > 0) {
+            const taxRate = estimate.tax / estimate.subtotal;
+            const matchingTax = taxes.find(t => Math.abs(t.rate - taxRate) < 0.0001);
+            initialFormValues.taxId = matchingTax?.id || 'none';
+        } else {
+            initialFormValues.taxId = 'none';
+        }
+        reset(initialFormValues);
     }
     if (lineItemsData) {
         replace(lineItemsData.map(({id, ...rest}) => rest));
     }
-  }, [estimate, lineItemsData, reset, replace, taxes]);
+}, [estimate, lineItemsData, reset, replace, taxes]);
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -141,6 +150,7 @@ export default function EditEstimatePage() {
       subtotal,
       tax: taxAmount,
       total,
+      taxId: data.taxId === 'none' ? null : data.taxId,
     };
 
     const { lineItems, ...estimateCore } = estimateData;
@@ -442,3 +452,5 @@ export default function EditEstimatePage() {
     </form>
   );
 }
+
+    
