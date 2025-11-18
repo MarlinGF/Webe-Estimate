@@ -26,24 +26,20 @@ import { useEffect, useState, useMemo } from 'react';
 export default function InvoicesPage() {
   const { firestore, user } = useFirebase();
 
-  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
+  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : null, [user]);
+  const clientsCollection = useMemoFirebase(() => clientsPath ? collection(firestore, clientsPath) : null, [firestore, clientsPath]);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : '', [user]);
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath)) : null, [firestore, user, invoicesPath]);
+  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : null, [user]);
+  const invoicesCollection = useMemoFirebase(() => invoicesPath ? query(collection(firestore, invoicesPath)) : null, [firestore, invoicesPath]);
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
   
-  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
-
-  useEffect(() => {
-    if (clients) {
-      const byId = clients.reduce((acc, client) => {
-        acc[client.id] = client;
-        return acc;
-      }, {} as {[key: string]: Client});
-      setClientsById(byId);
-    }
+  const clientsById = useMemo(() => {
+    if (!clients) return {};
+    return clients.reduce((acc, client) => {
+      acc[client.id] = client;
+      return acc;
+    }, {} as {[key: string]: Client});
   }, [clients]);
 
   const isLoading = isLoadingClients || isLoadingInvoices;
@@ -88,7 +84,7 @@ export default function InvoicesPage() {
                   </Link>
                 </TableCell>
                 <TableCell>{invoice.client?.firstName} {invoice.client?.lastName}</TableCell>
-                <TableCell>{invoice.invoiceDate}</TableCell>
+                <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={statusColors[invoice.status] || 'outline'}>{invoice.status}</Badge>
                 </TableCell>

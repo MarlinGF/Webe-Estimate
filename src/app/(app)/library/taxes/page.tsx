@@ -38,13 +38,13 @@ export default function TaxesPage() {
   const [editingTax, setEditingTax] = useState<Tax | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   
-  const taxesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'taxes') : null, [firestore]);
-  const { data: taxes, isLoading } = useCollection<Tax>(taxesCollection);
+  const taxesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'taxes') : null, [firestore]);
+  const { data: taxes, isLoading } = useCollection<Tax>(taxesCollectionRef);
 
   const handleAddTax = async (newTax: Omit<Tax, 'id'>) => {
-    if (!taxesCollection) return;
+    if (!taxesCollectionRef) return;
     try {
-      await addDoc(taxesCollection, newTax);
+      await addDoc(taxesCollectionRef, newTax);
     } catch (error) {
       console.error("Error adding tax: ", error);
       toast({

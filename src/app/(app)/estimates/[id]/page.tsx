@@ -38,7 +38,7 @@ export default function EstimateDetailPage() {
   const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'estimates', id, 'lineItems') : null, [firestore, user, id]);
   const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<LineItem>(lineItemsRef);
 
-  const isLoading = isLoadingEstimate || isLoadingClient || isLoadingLineItems;
+  const isLoading = isLoadingEstimate || isLoadingLineItems || isLoadingClient;
 
   if (isLoading) {
     return <div>Loading estimate...</div>;
@@ -86,8 +86,8 @@ export default function EstimateDetailPage() {
               <CardTitle className="text-2xl mb-2">Estimate</CardTitle>
               <div className="text-muted-foreground">
                 <div>{estimate.estimateNumber}</div>
-                <div>Issued: {estimate.estimateDate}</div>
-                <div>Expires: {estimate.expiryDate}</div>
+                <div>Issued: {new Date(estimate.estimateDate).toLocaleDateString()}</div>
+                <div>Expires: {new Date(estimate.expiryDate).toLocaleDateString()}</div>
               </div>
             </div>
             <div className="text-right">

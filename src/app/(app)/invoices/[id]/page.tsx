@@ -91,8 +91,8 @@ export default function InvoiceDetailPage() {
               <CardTitle className="text-2xl mb-2">Invoice</CardTitle>
               <div className="text-muted-foreground">
                 <div>{invoice.invoiceNumber}</div>
-                <div>Issued: {invoice.invoiceDate}</div>
-                <div>Due: {invoice.dueDate}</div>
+                <div>Issued: {new Date(invoice.invoiceDate).toLocaleDateString()}</div>
+                <div>Due: {new Date(invoice.dueDate).toLocaleDateString()}</div>
               </div>
             </div>
             <div className="text-right">

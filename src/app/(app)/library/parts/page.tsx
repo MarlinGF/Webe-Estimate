@@ -41,13 +41,13 @@ export default function PartsPage() {
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   
-  const partsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
-  const { data: parts, isLoading } = useCollection<Part>(partsCollection);
+  const partsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+  const { data: parts, isLoading } = useCollection<Part>(partsCollectionRef);
 
   const handleAddPart = async (newPart: Omit<Part, 'id'>) => {
-    if (!partsCollection) return;
+    if (!partsCollectionRef) return;
     try {
-      await addDoc(partsCollection, newPart);
+      await addDoc(partsCollectionRef, newPart);
     } catch (error) {
       console.error("Error adding part: ", error);
       toast({

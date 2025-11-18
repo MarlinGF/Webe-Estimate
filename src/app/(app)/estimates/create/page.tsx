@@ -55,17 +55,17 @@ export default function CreateEstimatePage() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
 
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
-  const { data: clientList, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
+  const clientsCollectionRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clientList, isLoading: isLoadingClients } = useCollection<Client>(clientsCollectionRef);
 
-  const servicesCollection = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
-  const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesCollection);
+  const servicesCollectionRef = useMemoFirebase(() => collection(firestore, 'services'), [firestore]);
+  const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesCollectionRef);
 
-  const partsCollection = useMemoFirebase(() => collection(firestore, 'parts'), [firestore]);
-  const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsCollection);
+  const partsCollectionRef = useMemoFirebase(() => collection(firestore, 'parts'), [firestore]);
+  const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsCollectionRef);
 
-  const taxesCollection = useMemoFirebase(() => collection(firestore, 'taxes'), [firestore]);
-  const { data: taxes, isLoading: isLoadingTaxes } = useCollection<Tax>(taxesCollection);
+  const taxesCollectionRef = useMemoFirebase(() => collection(firestore, 'taxes'), [firestore]);
+  const { data: taxes, isLoading: isLoadingTaxes } = useCollection<Tax>(taxesCollectionRef);
 
 
   const {
@@ -132,7 +132,7 @@ export default function CreateEstimatePage() {
     const estimateData = {
       ...data,
       userId: user.uid,
-      status: 'Draft',
+      status: 'Draft' as const,
       subtotal,
       tax: taxAmount,
       total,
@@ -145,10 +145,9 @@ export default function CreateEstimatePage() {
         const newEstimateRef = await addDoc(estimatesCollectionRef, estimateCore);
         
         const batch = writeBatch(firestore);
-        const lineItemsCollectionRef = collection(newEstimateRef, 'lineItems');
         
         lineItems.forEach(item => {
-            const newItemRef = doc(lineItemsCollectionRef);
+            const newItemRef = doc(collection(newEstimateRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
         
@@ -399,5 +398,3 @@ export default function CreateEstimatePage() {
     </form>
   );
 }
-
-    

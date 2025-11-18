@@ -40,13 +40,13 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
-  const { data: clients, isLoading } = useCollection<Omit<Client, 'id'>>(clientsCollection);
+  const clientsCollectionRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clients, isLoading } = useCollection<Client>(clientsCollectionRef);
 
   const handleAddClient = async (newClient: Omit<Client, 'id' | 'userId'>) => {
-    if (!clientsCollection || !user) return;
+    if (!clientsCollectionRef || !user) return;
     try {
-      await addDoc(clientsCollection, { ...newClient, userId: user.uid });
+      await addDoc(clientsCollectionRef, { ...newClient, userId: user.uid });
     } catch (error) {
       console.error("Error adding client: ", error);
       toast({

@@ -21,31 +21,25 @@ import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import type { Estimate, Client } from '@/lib/types';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 
 export default function EstimatesPage() {
   const { firestore, user } = useFirebase();
 
-  const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : '', [user]);
-  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath)) : null, [firestore, user, estimatesPath]);
-  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
+  const estimatesCollectionRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'estimates') : null, [firestore, user]);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollectionRef);
 
-  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
-  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
+  const clientsCollectionRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollectionRef);
 
-  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
-
-  useEffect(() => {
-    if (clients) {
-      const byId = clients.reduce((acc, client) => {
-        acc[client.id] = client;
-        return acc;
-      }, {} as {[key: string]: Client});
-      setClientsById(byId);
-    }
+  const clientsById = useMemo(() => {
+    if (!clients) return {};
+    return clients.reduce((acc, client) => {
+      acc[client.id] = client;
+      return acc;
+    }, {} as {[key: string]: Client});
   }, [clients]);
 
   const isLoading = isLoadingEstimates || isLoadingClients;
@@ -99,7 +93,7 @@ export default function EstimatesPage() {
                   </Link>
                 </TableCell>
                 <TableCell>{getClientName(estimate.clientId)}</TableCell>
-                <TableCell>{estimate.estimateDate}</TableCell>
+                <TableCell>{new Date(estimate.estimateDate).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Badge variant={statusColors[estimate.status] || 'outline'}>{estimate.status}</Badge>
                 </TableCell>

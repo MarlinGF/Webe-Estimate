@@ -41,13 +41,13 @@ export default function ServicesPage() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
-  const servicesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'services'): null, [firestore]);
-  const { data: services, isLoading } = useCollection<Service>(servicesCollection);
+  const servicesCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, 'services'): null, [firestore]);
+  const { data: services, isLoading } = useCollection<Service>(servicesCollectionRef);
 
   const handleAddService = async (newService: Omit<Service, 'id'>) => {
-    if(!servicesCollection) return;
+    if(!servicesCollectionRef) return;
     try {
-      await addDoc(servicesCollection, newService);
+      await addDoc(servicesCollectionRef, newService);
     } catch (error) {
       console.error("Error adding service: ", error);
       toast({

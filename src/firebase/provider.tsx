@@ -156,13 +156,23 @@ export const useFirebaseApp = (): FirebaseApp => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const memoized = useMemo(factory, deps);
   
   if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
   
-  return memoized;
+  // This is a hack to track if the object was created with useMemoFirebase
+  // We can't use a symbol because we can't guarantee that the symbol will be the same instance
+  // across all modules.
+  Object.defineProperty(memoized, '__memo', {
+    value: true,
+    writable: false,
+    enumerable: false,
+    configurable: false,
+  });
+  
+  return memoized as MemoFirebase<T>;
 }
 
 /**

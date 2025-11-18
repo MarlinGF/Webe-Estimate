@@ -27,28 +27,24 @@ import { useEffect, useState, useMemo } from 'react';
 export default function Dashboard() {
   const { firestore, user } = useFirebase();
 
-  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
-  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
+  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : null, [user]);
+  const clientsCollection = useMemoFirebase(() => clientsPath ? collection(firestore, clientsPath) : null, [firestore, clientsPath]);
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
-  const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : '', [user]);
-  const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath)) : null, [firestore, user, estimatesPath]);
+  const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : null, [user]);
+  const estimatesCollection = useMemoFirebase(() => estimatesPath ? query(collection(firestore, estimatesPath)) : null, [firestore, estimatesPath]);
   const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
 
-  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : '', [user]);
-  const invoicesCollection = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath)) : null, [firestore, user, invoicesPath]);
+  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : null, [user]);
+  const invoicesCollection = useMemoFirebase(() => invoicesPath ? query(collection(firestore, invoicesPath)) : null, [firestore, invoicesPath]);
   const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
   
-  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
-
-  useEffect(() => {
-    if (clients) {
-      const byId = clients.reduce((acc, client) => {
-        acc[client.id] = client;
-        return acc;
-      }, {} as {[key: string]: Client});
-      setClientsById(byId);
-    }
+  const clientsById = useMemo(() => {
+    if (!clients) return {};
+    return clients.reduce((acc, client) => {
+      acc[client.id] = client;
+      return acc;
+    }, {} as {[key: string]: Client});
   }, [clients]);
 
   const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
@@ -190,7 +186,7 @@ export default function Dashboard() {
                     <Badge variant={statusColors[doc.status] || 'outline'}>{doc.status}</Badge>
                   </TableCell>
                   <TableCell>
-                    {'invoiceDate' in doc ? doc.invoiceDate : doc.estimateDate}
+                    {'invoiceDate' in doc ? new Date(doc.invoiceDate).toLocaleDateString() : new Date(doc.estimateDate).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(doc.total)}

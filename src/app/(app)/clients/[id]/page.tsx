@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Estimate, Invoice } from '@/lib/types';
+import { useMemo } from 'react';
 
 
 export default function ClientDetailPage() {
@@ -33,12 +34,12 @@ export default function ClientDetailPage() {
   const clientRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'clients', id) : null, [firestore, user, id]);
   const { data: client, isLoading: isLoadingClient } = useDoc<Client>(clientRef);
 
-  const estimatesPath = `users/${user?.uid}/estimates`;
-  const estimatesRef = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath), where('clientId', '==', id)) : null, [firestore, user, id, estimatesPath]);
+  const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : null, [user]);
+  const estimatesRef = useMemoFirebase(() => (estimatesPath && id) ? query(collection(firestore, estimatesPath), where('clientId', '==', id)) : null, [firestore, estimatesPath, id]);
   const { data: clientEstimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesRef);
   
-  const invoicesPath = `users/${user?.uid}/invoices`;
-  const invoicesRef = useMemoFirebase(() => user ? query(collection(firestore, invoicesPath), where('clientId', '==', id)) : null, [firestore, user, id, invoicesPath]);
+  const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : null, [user]);
+  const invoicesRef = useMemoFirebase(() => (invoicesPath && id) ? query(collection(firestore, invoicesPath), where('clientId', '==', id)) : null, [firestore, invoicesPath, id]);
   const { data: clientInvoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesRef);
 
   const isLoading = isLoadingClient || isLoadingEstimates || isLoadingInvoices;
@@ -102,7 +103,7 @@ export default function ClientDetailPage() {
                           {estimate.estimateNumber}
                         </Link>
                       </TableCell>
-                      <TableCell>{estimate.estimateDate}</TableCell>
+                      <TableCell>{new Date(estimate.estimateDate).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <Badge variant={statusColors[estimate.status] || 'outline'}>{estimate.status}</Badge>
                       </TableCell>
@@ -142,7 +143,7 @@ export default function ClientDetailPage() {
                           {invoice.invoiceNumber}
                         </Link>
                       </TableCell>
-                      <TableCell>{invoice.invoiceDate}</TableCell>
+                      <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
                       <TableCell>
                          <Badge variant={statusColors[invoice.status] || 'outline'}>{invoice.status}</Badge>
                       </TableCell>
