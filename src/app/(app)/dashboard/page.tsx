@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -20,7 +21,7 @@ import { formatCurrency } from '@/lib/utils';
 import { DollarSign, FileText, Receipt, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Estimate, Invoice, Client } from '@/lib/types';
 import { useEffect, useState, useMemo } from 'react';
 
@@ -32,12 +33,12 @@ export default function Dashboard() {
   const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
   
   const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : null, [user]);
-  const estimatesCollection = useMemoFirebase(() => estimatesPath ? query(collection(firestore, estimatesPath)) : null, [firestore, estimatesPath]);
-  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
+  const estimatesQuery = useMemoFirebase(() => estimatesPath ? query(collection(firestore, estimatesPath)) : null, [firestore, estimatesPath]);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesQuery);
 
   const invoicesPath = useMemo(() => user ? `users/${user.uid}/invoices` : null, [user]);
-  const invoicesCollection = useMemoFirebase(() => invoicesPath ? query(collection(firestore, invoicesPath)) : null, [firestore, invoicesPath]);
-  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesCollection);
+  const invoicesQuery = useMemoFirebase(() => invoicesPath ? query(collection(firestore, invoicesPath)) : null, [firestore, invoicesPath]);
+  const { data: invoices, isLoading: isLoadingInvoices } = useCollection<Invoice>(invoicesQuery);
   
   const clientsById = useMemo(() => {
     if (!clients) return {};
@@ -49,29 +50,36 @@ export default function Dashboard() {
 
   const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
 
-  const combinedEstimates = useMemo(() => 
-    estimates?.map(e => ({...e, client: clientsById[e.clientId]})) || [], 
-  [estimates, clientsById]);
+  const combinedEstimates = useMemo(() => {
+    if (!estimates || !clientsById) return [];
+    return estimates.map(e => ({...e, client: clientsById[e.clientId]}));
+  }, [estimates, clientsById]);
 
-  const combinedInvoices = useMemo(() => 
-    invoices?.map(i => ({...i, client: clientsById[i.clientId]})) || [],
-  [invoices, clientsById]);
+  const combinedInvoices = useMemo(() => {
+    if (!invoices || !clientsById) return [];
+    return invoices.map(i => ({...i, client: clientsById[i.clientId]}));
+  }, [invoices, clientsById]);
 
-  const totalRevenue = combinedInvoices
-    ?.filter((inv) => inv.status === 'Paid')
-    .reduce((sum, inv) => sum + inv.total, 0) ?? 0;
+  const totalRevenue = useMemo(() => 
+    invoices?.reduce((sum, inv) => sum + (inv.amountPaid || 0), 0) ?? 0,
+  [invoices]);
   
-  const openEstimates = combinedEstimates?.filter(
-    (est) => est.status === 'Sent' || est.status === 'Draft'
-  ).length ?? 0;
+  const openEstimates = useMemo(() =>
+    estimates?.filter(
+      (est) => est.status === 'Sent' || est.status === 'Draft'
+    ).length ?? 0,
+  [estimates]);
 
-  const overdueInvoices = combinedInvoices?.filter(
-    (inv) => inv.status === 'Overdue'
-  ).length ?? 0;
+  const overdueInvoices = useMemo(() =>
+    invoices?.filter(
+      (inv) => inv.status === 'Overdue'
+    ).length ?? 0,
+  [invoices]);
   
   const clientsCount = clients?.length ?? 0;
 
-  const recentActivity = [...(combinedEstimates || []), ...(combinedInvoices || [])]
+  const recentActivity = useMemo(() => 
+    [...(combinedEstimates || []), ...(combinedInvoices || [])]
     .sort(
       (a, b) => {
         const dateA = new Date('invoiceDate' in a ? a.invoiceDate : a.estimateDate).getTime();
@@ -79,7 +87,7 @@ export default function Dashboard() {
         return dateB - dateA;
       }
     )
-    .slice(0, 5);
+    .slice(0, 5), [combinedEstimates, combinedInvoices]);
   
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Paid: 'default',
@@ -106,7 +114,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">
-              From all paid invoices
+              Based on amount paid on all invoices
             </p>
           </CardContent>
         </Card>
