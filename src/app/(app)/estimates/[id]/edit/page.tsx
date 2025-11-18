@@ -145,15 +145,17 @@ export default function EditEstimatePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !estimateRef || !lineItemsRef) return;
     
-    const { lineItems, ...coreData } = data;
-    
     const estimateCoreData = {
-      ...coreData,
+      clientId: data.clientId,
+      estimateNumber: data.estimateNumber,
+      estimateDate: data.estimateDate,
+      expiryDate: data.expiryDate,
+      status: data.status,
       userId: user.uid,
       subtotal,
       tax: taxAmount,
       total,
-      taxId: data.taxId === 'none' ? null : data.taxId,
+      taxId: data.taxId === 'none' ? undefined : data.taxId,
     };
     
     try {
@@ -169,7 +171,7 @@ export default function EditEstimatePage() {
         });
 
         // 3. Add the new line items
-        lineItems.forEach(item => {
+        data.lineItems.forEach(item => {
             const newItemRef = doc(collection(estimateRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
@@ -454,4 +456,3 @@ export default function EditEstimatePage() {
   );
 }
 
-    

@@ -150,15 +150,18 @@ export default function EditInvoicePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !invoiceRef || !lineItemsRef) return;
     
-    const { lineItems, ...coreData } = data;
-    
     const invoiceCoreData = {
-        ...coreData,
+        clientId: data.clientId,
+        invoiceNumber: data.invoiceNumber,
+        invoiceDate: data.invoiceDate,
+        dueDate: data.dueDate,
+        status: data.status,
+        amountPaid: data.amountPaid,
         userId: user.uid,
         subtotal,
         tax: taxAmount,
         total,
-        taxId: data.taxId === 'none' ? null : data.taxId,
+        taxId: data.taxId === 'none' ? undefined : data.taxId,
       };
     
     try {
@@ -174,7 +177,7 @@ export default function EditInvoicePage() {
         });
 
         // 3. Add the new line items
-        lineItems.forEach(item => {
+        data.lineItems.forEach(item => {
             const newItemRef = doc(collection(invoiceRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
@@ -478,5 +481,3 @@ export default function EditInvoicePage() {
     </form>
   );
 }
-
-    
