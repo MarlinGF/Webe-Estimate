@@ -15,7 +15,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, stripHtml } from '@/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -25,12 +25,6 @@ import { doc, collection } from 'firebase/firestore';
 import type { Client, Estimate, LineItem, Service, Part } from '@/lib/types';
 import { LineItemRow } from '@/components/line-item-row';
 import { useMemo } from 'react';
-
-function stripHtml(html: string) {
-  if (typeof window === 'undefined') return '';
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || "";
-}
 
 export default function EstimateDetailPage() {
   const params = useParams();
@@ -58,7 +52,11 @@ export default function EstimateDetailPage() {
 
   const findLibraryItem = (description: string) => {
     const plainDescription = stripHtml(description).trim();
-    return libraryItems.find(libItem => stripHtml(libItem.description || "").trim() === plainDescription || libItem.name === plainDescription);
+    if (!plainDescription) return undefined;
+    return libraryItems.find(libItem => {
+        const libItemDescription = stripHtml(libItem.description).trim();
+        return libItem.name === plainDescription || (libItemDescription && libItemDescription === plainDescription);
+    });
   };
 
 
@@ -139,11 +137,12 @@ export default function EstimateDetailPage() {
             <TableBody>
               {lineItems?.map((item) => {
                   const libraryItem = findLibraryItem(item.description);
+                  const itemName = libraryItem?.name || stripHtml(item.description).split(' ').slice(0,3).join(' ') || "Line Item";
                   return (
                     <LineItemRow
                       key={item.id}
                       item={item}
-                      itemName={libraryItem?.name || stripHtml(item.description).split(' ')[0]}
+                      itemName={itemName}
                       itemImage={libraryItem?.imageUrl}
                     />
                   );

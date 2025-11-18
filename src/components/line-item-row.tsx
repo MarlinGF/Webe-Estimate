@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import type { LineItem, Service, Part } from '@/lib/types';
 import { ImageIcon } from 'lucide-react';
+import { stripHtml } from '@/lib/utils';
 
 interface LineItemRowProps {
   item: LineItem;
@@ -14,15 +15,10 @@ interface LineItemRowProps {
   itemName: string;
 }
 
-function stripHtml(html: string) {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || "";
-}
-
 export function LineItemRow({ item, itemImage, itemName }: LineItemRowProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const plainTextDescription = item.description ? stripHtml(item.description) : '';
+  const plainTextDescription = stripHtml(item.description);
   const isLong = plainTextDescription.length > 150;
   const preview = isLong ? `${plainTextDescription.slice(0, 150)}...` : plainTextDescription;
 
