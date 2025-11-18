@@ -60,21 +60,24 @@ export default function Dashboard() {
     return invoices.map(i => ({...i, client: clientsById[i.clientId]}));
   }, [invoices, clientsById]);
 
-  const totalRevenue = useMemo(() => 
-    invoices?.reduce((sum, inv) => sum + (inv.amountPaid || 0), 0) ?? 0,
-  [invoices]);
+  const totalRevenue = useMemo(() => {
+    if (!invoices) return 0;
+    return invoices.reduce((sum, inv) => sum + (inv.amountPaid || 0), 0);
+  }, [invoices]);
   
-  const openEstimates = useMemo(() =>
-    estimates?.filter(
+  const openEstimates = useMemo(() => {
+    if (!estimates) return 0;
+    return estimates.filter(
       (est) => est.status === 'Sent' || est.status === 'Draft'
-    ).length ?? 0,
-  [estimates]);
+    ).length;
+  }, [estimates]);
 
-  const overdueInvoices = useMemo(() =>
-    invoices?.filter(
+  const overdueInvoices = useMemo(() => {
+    if (!invoices) return 0;
+    return invoices.filter(
       (inv) => inv.status === 'Overdue'
-    ).length ?? 0,
-  [invoices]);
+    ).length;
+  }, [invoices]);
   
   const clientsCount = clients?.length ?? 0;
 
