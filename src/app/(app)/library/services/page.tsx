@@ -34,9 +34,11 @@ import { AddServiceDialog } from '@/components/add-service-dialog';
 import { EditServiceDialog } from '@/components/edit-service-dialog';
 import { DeleteItemAlert } from '@/components/delete-item-alert';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function ServicesPage() {
   const { firestore } = useFirebase();
+  const router = useRouter();
   const { toast } = useToast();
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export default function ServicesPage() {
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
             {!isLoading && services?.map((service) => (
-              <TableRow key={service.id}>
+              <TableRow key={service.id} className="cursor-pointer">
                 <TableCell>
                   {service.imageUrl ? (
                     <Image
@@ -140,7 +142,7 @@ export default function ServicesPage() {
                 </TableCell>
                 <TableCell className="font-medium">{service.name}</TableCell>
                 <TableCell>{formatCurrency(service.price)}</TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

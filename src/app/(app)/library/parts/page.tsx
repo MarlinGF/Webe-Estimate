@@ -34,9 +34,11 @@ import { AddPartDialog } from '@/components/add-part-dialog';
 import { EditPartDialog } from '@/components/edit-part-dialog';
 import { DeleteItemAlert } from '@/components/delete-item-alert';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function PartsPage() {
   const { firestore } = useFirebase();
+  const router = useRouter();
   const { toast } = useToast();
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export default function PartsPage() {
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
               {!isLoading && parts?.map((part) => (
-                <TableRow key={part.id}>
+                <TableRow key={part.id} className="cursor-pointer">
                   <TableCell>
                     {part.imageUrl ? (
                       <Image
@@ -141,7 +143,7 @@ export default function PartsPage() {
                   <TableCell className="font-medium">{part.name}</TableCell>
                   <TableCell>{formatCurrency(part.cost)}</TableCell>
                   <TableCell>{formatCurrency(part.price)}</TableCell>
-                   <TableCell>
+                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
