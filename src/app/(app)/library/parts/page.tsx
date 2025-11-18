@@ -27,39 +27,68 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle, ImageIcon, MoreHorizontal } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Part } from '@/lib/types';
 import { AddPartDialog } from '@/components/add-part-dialog';
 import { EditPartDialog } from '@/components/edit-part-dialog';
 import { DeleteItemAlert } from '@/components/delete-item-alert';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PartsPage() {
   const { firestore } = useFirebase();
+  const { toast } = useToast();
   const [editingPart, setEditingPart] = useState<Part | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   
   const partsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
   const { data: parts, isLoading } = useCollection<Part>(partsCollection);
 
-  const handleAddPart = (newPart: Omit<Part, 'id'>) => {
+  const handleAddPart = async (newPart: Omit<Part, 'id'>) => {
     if (!partsCollection) return;
-    addDocumentNonBlocking(partsCollection, newPart);
+    try {
+      await addDoc(partsCollection, newPart);
+    } catch (error) {
+      console.error("Error adding part: ", error);
+      toast({
+        title: "Error",
+        description: "Could not add part. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUpdatePart = (updatedPart: Part) => {
+  const handleUpdatePart = async (updatedPart: Part) => {
     if (!firestore) return;
     const partRef = doc(firestore, 'parts', updatedPart.id);
     const { id, ...partData } = updatedPart;
-    updateDocumentNonBlocking(partRef, partData);
-    setEditingPart(null);
+    try {
+      await updateDoc(partRef, partData);
+      setEditingPart(null);
+    } catch (error) {
+      console.error("Error updating part: ", error);
+      toast({
+        title: "Error",
+        description: "Could not update part. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deletingItemId && firestore) {
       const itemRef = doc(firestore, 'parts', deletingItemId);
-      deleteDocumentNonBlocking(itemRef);
-      setDeletingItemId(null);
+      try {
+        await deleteDoc(itemRef);
+        setDeletingItemId(null);
+      } catch (error) {
+        console.error("Error deleting part: ", error);
+        toast({
+          title: "Error",
+          description: "Could not delete part. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

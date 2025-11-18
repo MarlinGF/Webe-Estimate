@@ -27,39 +27,68 @@ import {
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle, ImageIcon, MoreHorizontal } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Service } from '@/lib/types';
 import { AddServiceDialog } from '@/components/add-service-dialog';
 import { EditServiceDialog } from '@/components/edit-service-dialog';
 import { DeleteItemAlert } from '@/components/delete-item-alert';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ServicesPage() {
   const { firestore } = useFirebase();
+  const { toast } = useToast();
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   const servicesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'services'): null, [firestore]);
   const { data: services, isLoading } = useCollection<Service>(servicesCollection);
 
-  const handleAddService = (newService: Omit<Service, 'id'>) => {
+  const handleAddService = async (newService: Omit<Service, 'id'>) => {
     if(!servicesCollection) return;
-    addDocumentNonBlocking(servicesCollection, newService);
+    try {
+      await addDoc(servicesCollection, newService);
+    } catch (error) {
+      console.error("Error adding service: ", error);
+      toast({
+        title: "Error",
+        description: "Could not add service. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
-  const handleUpdateService = (updatedService: Service) => {
+  const handleUpdateService = async (updatedService: Service) => {
     if (!firestore) return;
     const serviceRef = doc(firestore, 'services', updatedService.id);
     const { id, ...serviceData } = updatedService;
-    updateDocumentNonBlocking(serviceRef, serviceData);
-    setEditingService(null);
+    try {
+      await updateDoc(serviceRef, serviceData);
+      setEditingService(null);
+    } catch (error) {
+      console.error("Error updating service: ", error);
+      toast({
+        title: "Error",
+        description: "Could not update service. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deletingItemId && firestore) {
       const itemRef = doc(firestore, 'services', deletingItemId);
-      deleteDocumentNonBlocking(itemRef);
-      setDeletingItemId(null);
+      try {
+        await deleteDoc(itemRef);
+        setDeletingItemId(null);
+      } catch (error) {
+        console.error("Error deleting service: ", error);
+        toast({
+          title: "Error",
+          description: "Could not delete service. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

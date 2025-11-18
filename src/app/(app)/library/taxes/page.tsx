@@ -24,39 +24,68 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, MoreHorizontal } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Tax } from '@/lib/types';
 import { AddTaxDialog } from '@/components/add-tax-dialog';
 import { EditTaxDialog } from '@/components/edit-tax-dialog';
 import { DeleteItemAlert } from '@/components/delete-item-alert';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TaxesPage() {
   const { firestore } = useFirebase();
+  const { toast } = useToast();
   const [editingTax, setEditingTax] = useState<Tax | null>(null);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   
   const taxesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'taxes') : null, [firestore]);
   const { data: taxes, isLoading } = useCollection<Tax>(taxesCollection);
 
-  const handleAddTax = (newTax: Omit<Tax, 'id'>) => {
+  const handleAddTax = async (newTax: Omit<Tax, 'id'>) => {
     if (!taxesCollection) return;
-    addDocumentNonBlocking(taxesCollection, newTax);
+    try {
+      await addDoc(taxesCollection, newTax);
+    } catch (error) {
+      console.error("Error adding tax: ", error);
+      toast({
+        title: "Error",
+        description: "Could not add tax. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUpdateTax = (updatedTax: Tax) => {
+  const handleUpdateTax = async (updatedTax: Tax) => {
     if (!firestore) return;
     const taxRef = doc(firestore, 'taxes', updatedTax.id);
     const { id, ...taxData } = updatedTax;
-    updateDocumentNonBlocking(taxRef, taxData);
-    setEditingTax(null);
+    try {
+      await updateDoc(taxRef, taxData);
+      setEditingTax(null);
+    } catch (error) {
+      console.error("Error updating tax: ", error);
+      toast({
+        title: "Error",
+        description: "Could not update tax. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deletingItemId && firestore) {
       const itemRef = doc(firestore, 'taxes', deletingItemId);
-      deleteDocumentNonBlocking(itemRef);
-      setDeletingItemId(null);
+      try {
+        await deleteDoc(itemRef);
+        setDeletingItemId(null);
+      } catch (error) {
+        console.error("Error deleting tax: ", error);
+        toast({
+          title: "Error",
+          description: "Could not delete tax. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
   
@@ -143,5 +172,3 @@ export default function TaxesPage() {
     </>
   );
 }
-
-    

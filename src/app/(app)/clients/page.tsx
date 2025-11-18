@@ -30,35 +30,64 @@ import { AddClientDialog } from '@/components/add-client-dialog';
 import { EditClientDialog } from '@/components/edit-client-dialog';
 import { DeleteClientAlert } from '@/components/delete-client-alert';
 import type { Client } from '@/lib/types';
-import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
+import { collection, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ClientsPage() {
   const { firestore, user } = useFirebase();
+  const { toast } = useToast();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   
   const clientsCollection = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
   const { data: clients, isLoading } = useCollection<Omit<Client, 'id'>>(clientsCollection);
 
-  const handleAddClient = (newClient: Omit<Client, 'id' | 'userId'>) => {
+  const handleAddClient = async (newClient: Omit<Client, 'id' | 'userId'>) => {
     if (!clientsCollection || !user) return;
-    addDocumentNonBlocking(clientsCollection, { ...newClient, userId: user.uid });
+    try {
+      await addDoc(clientsCollection, { ...newClient, userId: user.uid });
+    } catch (error) {
+      console.error("Error adding client: ", error);
+      toast({
+        title: "Error",
+        description: "Could not add client. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUpdateClient = (updatedClient: Client) => {
+  const handleUpdateClient = async (updatedClient: Client) => {
     if (!user) return;
     const clientRef = doc(firestore, 'users', user.uid, 'clients', updatedClient.id);
     const { id, ...clientData } = updatedClient;
-    updateDocumentNonBlocking(clientRef, clientData);
-    setEditingClient(null);
+    try {
+      await updateDoc(clientRef, clientData);
+      setEditingClient(null);
+    } catch (error) {
+       console.error("Error updating client: ", error);
+       toast({
+        title: "Error",
+        description: "Could not update client. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteClient = () => {
+  const handleDeleteClient = async () => {
     if (deletingClientId && user) {
       const clientRef = doc(firestore, 'users', user.uid, 'clients', deletingClientId);
-      deleteDocumentNonBlocking(clientRef);
-      setDeletingClientId(null);
+      try {
+        await deleteDoc(clientRef);
+        setDeletingClientId(null);
+      } catch (error) {
+        console.error("Error deleting client: ", error);
+        toast({
+          title: "Error",
+          description: "Could not delete client. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
