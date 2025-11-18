@@ -95,22 +95,16 @@ export default function EditInvoicePage() {
 
   useEffect(() => {
     if (invoice) {
-        const initialFormValues: any = { ...invoice };
-        if (taxes && invoice.taxId) {
-            initialFormValues.taxId = invoice.taxId;
-        } else if (taxes && invoice.tax > 0 && invoice.subtotal > 0) {
-            const taxRate = invoice.tax / invoice.subtotal;
-            const matchingTax = taxes.find(t => Math.abs(t.rate - taxRate) < 0.0001);
-            initialFormValues.taxId = matchingTax?.id || 'none';
-        } else {
-            initialFormValues.taxId = 'none';
-        }
+        const initialFormValues: any = { 
+            ...invoice,
+            taxId: invoice.taxId || 'none' 
+        };
         reset(initialFormValues);
     }
     if (lineItemsData) {
         replace(lineItemsData.map(({id, ...rest}) => rest));
     }
-}, [invoice, lineItemsData, reset, replace, taxes]);
+}, [invoice, lineItemsData, reset, replace]);
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -150,13 +144,10 @@ export default function EditInvoicePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !invoiceRef || !lineItemsRef) return;
     
+    const { lineItems, ...coreData } = data;
+
     const invoiceCoreData = {
-        clientId: data.clientId,
-        invoiceNumber: data.invoiceNumber,
-        invoiceDate: data.invoiceDate,
-        dueDate: data.dueDate,
-        status: data.status,
-        amountPaid: data.amountPaid,
+        ...coreData,
         userId: user.uid,
         subtotal,
         tax: taxAmount,
@@ -177,7 +168,7 @@ export default function EditInvoicePage() {
         });
 
         // 3. Add the new line items
-        data.lineItems.forEach(item => {
+        lineItems.forEach(item => {
             const newItemRef = doc(collection(invoiceRef, 'lineItems'));
             batch.set(newItemRef, item);
         });

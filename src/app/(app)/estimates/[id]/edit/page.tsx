@@ -95,22 +95,16 @@ export default function EditEstimatePage() {
 
   useEffect(() => {
     if (estimate) {
-        const initialFormValues: any = { ...estimate };
-        if (taxes && estimate.taxId) {
-            initialFormValues.taxId = estimate.taxId;
-        } else if (taxes && estimate.tax > 0 && estimate.subtotal > 0) {
-            const taxRate = estimate.tax / estimate.subtotal;
-            const matchingTax = taxes.find(t => Math.abs(t.rate - taxRate) < 0.0001);
-            initialFormValues.taxId = matchingTax?.id || 'none';
-        } else {
-            initialFormValues.taxId = 'none';
-        }
+        const initialFormValues: any = { 
+            ...estimate,
+            taxId: estimate.taxId || 'none' 
+        };
         reset(initialFormValues);
     }
     if (lineItemsData) {
         replace(lineItemsData.map(({id, ...rest}) => rest));
     }
-}, [estimate, lineItemsData, reset, replace, taxes]);
+}, [estimate, lineItemsData, reset, replace]);
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -145,12 +139,10 @@ export default function EditEstimatePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !estimateRef || !lineItemsRef) return;
     
+    const { lineItems, ...coreData } = data;
+
     const estimateCoreData = {
-      clientId: data.clientId,
-      estimateNumber: data.estimateNumber,
-      estimateDate: data.estimateDate,
-      expiryDate: data.expiryDate,
-      status: data.status,
+      ...coreData,
       userId: user.uid,
       subtotal,
       tax: taxAmount,
@@ -171,7 +163,7 @@ export default function EditEstimatePage() {
         });
 
         // 3. Add the new line items
-        data.lineItems.forEach(item => {
+        lineItems.forEach(item => {
             const newItemRef = doc(collection(estimateRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
@@ -455,4 +447,3 @@ export default function EditEstimatePage() {
     </form>
   );
 }
-
