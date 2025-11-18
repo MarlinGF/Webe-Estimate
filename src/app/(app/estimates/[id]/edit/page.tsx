@@ -94,17 +94,17 @@ export default function EditEstimatePage() {
   });
 
   useEffect(() => {
-    if (estimate) {
-        const initialFormValues: any = { 
-            ...estimate,
-            taxId: estimate.taxId || 'none' 
-        };
-        reset(initialFormValues);
+    // Only reset the form when both the estimate and its line items have been loaded.
+    if (estimate && lineItemsData && !isLoadingEstimate && !isLoadingLineItems) {
+      const initialFormValues: Partial<FormValues> = {
+        ...estimate,
+        taxId: estimate.taxId || 'none',
+        lineItems: lineItemsData.map(({ id, ...rest }) => rest)
+      };
+      reset(initialFormValues);
     }
-    if (lineItemsData) {
-        replace(lineItemsData.map(({id, ...rest}) => rest));
-    }
-}, [estimate, lineItemsData, reset, replace]);
+  }, [estimate, lineItemsData, reset, isLoadingEstimate, isLoadingLineItems]);
+
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -448,6 +448,3 @@ export default function EditEstimatePage() {
     </form>
   );
 }
-
-
-    

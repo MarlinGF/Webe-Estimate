@@ -94,17 +94,16 @@ export default function EditInvoicePage() {
   });
 
   useEffect(() => {
-    if (invoice) {
-        const initialFormValues: any = { 
-            ...invoice,
-            taxId: invoice.taxId || 'none' 
-        };
-        reset(initialFormValues);
+    // Only reset the form when both the invoice and its line items have been loaded.
+    if (invoice && lineItemsData && !isLoadingInvoice && !isLoadingLineItems) {
+      const initialFormValues: Partial<FormValues> = {
+        ...invoice,
+        taxId: invoice.taxId || 'none',
+        lineItems: lineItemsData.map(({ id, ...rest }) => rest)
+      };
+      reset(initialFormValues);
     }
-    if (lineItemsData) {
-        replace(lineItemsData.map(({id, ...rest}) => rest));
-    }
-}, [invoice, lineItemsData, reset, replace]);
+  }, [invoice, lineItemsData, reset, isLoadingInvoice, isLoadingLineItems]);
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -473,5 +472,3 @@ export default function EditInvoicePage() {
     </form>
   );
 }
-
-    
