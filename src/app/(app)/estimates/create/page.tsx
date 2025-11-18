@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -298,6 +299,7 @@ export default function CreateEstimatePage() {
                                 <RichTextEditor
                                     value={controllerField.value}
                                     onChange={controllerField.onChange}
+                                    placeholder="Item description..."
                                 />
                                 <AiDescriptionGenerator
                                     onInsert={(desc) =>

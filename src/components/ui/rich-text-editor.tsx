@@ -1,218 +1,248 @@
-'use client';
 
-import { useEditor, EditorContent, BubbleMenu, FloatingMenu } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import {
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Heading1,
-  Heading2,
-  Heading3,
-  List,
-  ListOrdered,
-  Link,
-  Image as ImageIcon,
-  Undo,
-  Redo,
-} from 'lucide-react';
-import UnderlineExtension from '@tiptap/extension-underline';
-import LinkExtension from '@tiptap/extension-link';
-import ImageExtension from '@tiptap/extension-image';
-import { useCallback, useRef, useState } from 'react';
-import { useFirebase } from '@/firebase';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Button } from './button';
-import { useToast } from '@/hooks/use-toast';
+"use client";
 
-interface RichTextEditorProps {
-  value?: string;
-  onChange: (value: string) => void;
-}
+import React, { useEffect } from "react";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import Heading from "@tiptap/extension-heading";
+import BulletList from "@tiptap/extension-bullet-list";
+import OrderedList from "@tiptap/extension-ordered-list";
+import ListItem from "@tiptap/extension-list-item";
+import History from "@tiptap/extension-history";
+import { useFirebase } from "@/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { stripHtml } from "@/lib/utils";
 
-const EditorToolbar = ({ editor }: { editor: any }) => {
-  const { storage } = useFirebase();
-  const { toast } = useToast();
-  const imageInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = useCallback(async (file: File) => {
-    if (!storage || !editor) {
-        toast({ title: "Error", description: "Storage or editor not available.", variant: "destructive" });
-        return;
-    };
-
-    try {
-      const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
-      editor.chain().focus().setImage({ src: url }).run();
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({ title: "Image Upload Failed", description: "Could not upload the image. Please try again.", variant: "destructive" });
-    }
-  }, [storage, editor, toast]);
-
-  const onImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      handleImageUpload(e.target.files[0]);
-    }
-  };
-
-  const setLink = useCallback(() => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
-
-    if (url === null) {
-      return;
-    }
-
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  }, [editor]);
-
-  if (!editor) return null;
-
-  return (
-    <div className="border border-input rounded-t-md p-1 flex flex-wrap items-center gap-1 bg-muted">
-      <Button
-        variant={editor.isActive('bold') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('italic') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('underline') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-      >
-        <Underline className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('heading', { level: 1 }) ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-      >
-        <Heading1 className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('heading', { level: 2 }) ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-      >
-        <Heading2 className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('heading', { level: 3 }) ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-      >
-        <Heading3 className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('bulletList') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-      >
-        <List className="h-4 w-4" />
-      </Button>
-      <Button
-        variant={editor.isActive('orderedList') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Button>
-       <Button
-        variant={editor.isActive('link') ? 'secondary' : 'ghost'}
-        size="icon"
-        type="button"
-        onClick={setLink}
-      >
-        <Link className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        onClick={() => imageInputRef.current?.click()}
-      >
-        <ImageIcon className="h-4 w-4" />
-      </Button>
-      <input
-        type="file"
-        ref={imageInputRef}
-        onChange={onImageFileChange}
-        className="hidden"
-        accept="image/*"
-      />
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
-      >
-        <Undo className="h-4 w-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
-      >
-        <Redo className="h-4 w-4" />
-      </Button>
-    </div>
-  );
+type RichTextEditorProps = {
+  value: string;
+  onChange: (html: string) => void;
+  placeholder?: string;
 };
 
-export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({
+  value,
+  onChange,
+  placeholder = "",
+}) => {
+  const { storage, user } = useFirebase();
+
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      UnderlineExtension,
-      LinkExtension.configure({
-        openOnClick: false,
+      StarterKit.configure({
+        bulletList: false,
+        orderedList: false,
+        listItem: false,
+        history: false,
+      }),
+      BulletList,
+      OrderedList,
+      ListItem,
+      Underline,
+      History,
+      Heading.configure({
+        levels: [1, 2, 3],
+      }),
+      Link.configure({
+        openOnClick: true,
         autolink: true,
       }),
-      ImageExtension,
+      Image,
     ],
-    content: value,
+    content: value || "",
     onUpdate({ editor }) {
-      onChange(editor.getHTML());
+      const html = editor.getHTML();
+      onChange(html);
     },
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert min-h-[120px] max-w-none w-full rounded-b-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+        class:
+          "min-h-[120px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
       },
     },
   });
 
+  // keep editor in sync if parent value changes programmatically
+  useEffect(() => {
+    if (!editor) return;
+    const isSame = editor.getHTML() === value;
+    if (isSame) {
+      return;
+    }
+    editor.commands.setContent(value, false);
+  }, [value, editor]);
+
+  if (!editor) return null;
+
+  const handleImageUpload = async (file: File) => {
+    if (!storage) {
+        alert("Firebase Storage is not available. Cannot upload image.");
+        return;
+    }
+    try {
+      const userId = user?.uid || "anonymous";
+      const path = `lineItemImages/${userId}/${Date.now()}-${file.name}`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: url, alt: file.name })
+        .run();
+    } catch (err) {
+      console.error("Image upload failed:", err);
+      alert("There was a problem uploading the image.");
+    }
+  };
+
+  const triggerImagePicker = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (file) await handleImageUpload(file);
+    };
+    input.click();
+  };
+
   return (
-    <div className="flex flex-col w-full">
-      <EditorToolbar editor={editor} />
+    <div className="border border-input rounded-md bg-card">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 px-2 py-1 border-b border-input bg-muted/50 text-sm">
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("bold") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          B
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("italic") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          I
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("underline") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          U
+        </button>
+
+        <span className="mx-1 border-l h-5 border-border" />
+
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 1 }).run()
+          }
+          className={`px-2 py-1 rounded ${
+            editor.isActive("heading", { level: 1 }) ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          H1
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={`px-2 py-1 rounded ${
+            editor.isActive("heading", { level: 2 }) ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          H2
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={`px-2 py-1 rounded ${
+            editor.isActive("heading", { level: 3 }) ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          H3
+        </button>
+
+        <span className="mx-1 border-l h-5 border-border" />
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("bulletList") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          • List
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("orderedList") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          1. List
+        </button>
+
+        <span className="mx-1 border-l h-5 border-border" />
+
+        <button
+          type="button"
+          onClick={() => {
+            const url = window.prompt("Enter URL");
+            if (!url) return;
+            editor.chain().focus().setLink({ href: url }).run();
+          }}
+          className={`px-2 py-1 rounded ${
+            editor.isActive("link") ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+          }`}
+        >
+          Link
+        </button>
+
+        <button
+          type="button"
+          onClick={triggerImagePicker}
+          className="px-2 py-1 rounded hover:bg-accent"
+        >
+          Image
+        </button>
+
+        <span className="mx-1 border-l h-5 border-border" />
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().undo().run()}
+          className="px-2 py-1 rounded hover:bg-accent disabled:opacity-50"
+          disabled={!editor.can().undo()}
+        >
+          ↺
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().redo().run()}
+          className="px-2 py-1 rounded hover:bg-accent disabled:opacity-50"
+           disabled={!editor.can().redo()}
+        >
+          ↻
+        </button>
+      </div>
+
       <EditorContent editor={editor} />
     </div>
   );
