@@ -1,3 +1,5 @@
+'use client';
+
 export interface Client {
   id: string;
   firstName: string;
@@ -47,7 +49,8 @@ export interface Estimate {
   tax: number;
   taxId?: string;
   total: number;
-  status: 'Draft' | 'Sent' | 'Approved' | 'Rejected';
+  status: 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Converted';
+  convertedInvoiceId?: string;
 }
 
 export interface Invoice {

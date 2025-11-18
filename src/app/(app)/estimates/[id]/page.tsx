@@ -16,20 +16,25 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, stripHtml } from '@/lib/utils';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, Download, FilePlus2, Pencil } from 'lucide-react';
+import { ArrowLeft, Download, FilePlus2, Pencil, Loader2 } from 'lucide-react';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { collection, doc, writeBatch, addDoc, updateDoc } from 'firebase/firestore';
 import type { Client, Estimate, LineItem, Service, Part } from '@/lib/types';
 import { LineItemRow } from '@/components/line-item-row';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function EstimateDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const { toast } = useToast();
   const id = params.id as string;
   const { firestore, user } = useFirebase();
+
+  const [isConverting, setIsConverting] = useState(false);
 
   const estimateRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid, 'estimates', id) : null, [firestore, user, id]);
   const { data: estimate, isLoading: isLoadingEstimate } = useDoc<Estimate>(estimateRef);
@@ -59,6 +64,80 @@ export default function EstimateDetailPage() {
     });
   };
 
+  const handleConvertToInvoice = async () => {
+    if (!user || !firestore || !estimate || !lineItems) return;
+
+    if (estimate.convertedInvoiceId) {
+      router.push(`/invoices/${estimate.convertedInvoiceId}`);
+      return;
+    }
+
+    setIsConverting(true);
+
+    try {
+      const batch = writeBatch(firestore);
+
+      // 1. Create new Invoice from Estimate data
+      const invoicesCollectionRef = collection(firestore, 'users', user.uid, 'invoices');
+      const newInvoiceRef = doc(invoicesCollectionRef);
+      
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+
+      batch.set(newInvoiceRef, {
+        clientId: estimate.clientId,
+        estimateId: estimate.id,
+        invoiceDate: new Date().toISOString().split('T')[0],
+        dueDate: dueDate.toISOString().split('T')[0],
+        invoiceNumber: `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        status: 'Draft',
+        subtotal: estimate.subtotal,
+        tax: estimate.tax,
+        total: estimate.total,
+        taxId: estimate.taxId,
+        amountPaid: 0,
+        userId: user.uid,
+      });
+
+      // 2. Copy line items to the new invoice's subcollection
+      const invoiceLineItemsCollectionRef = collection(newInvoiceRef, 'lineItems');
+      lineItems.forEach(item => {
+        const { id, ...itemData } = item;
+        const newItemRef = doc(invoiceLineItemsCollectionRef);
+        batch.set(newItemRef, itemData);
+      });
+      
+      // 3. Update the original estimate
+      if (estimateRef) {
+          batch.update(estimateRef, {
+            convertedInvoiceId: newInvoiceRef.id,
+            status: 'Converted',
+          });
+      }
+
+      // 4. Commit the batch
+      await batch.commit();
+
+      toast({
+        title: 'Invoice Created',
+        description: 'The estimate has been successfully converted to an invoice.',
+      });
+
+      // 5. Navigate to the new invoice
+      router.push(`/invoices/${newInvoiceRef.id}`);
+
+    } catch (error) {
+      console.error("Error converting estimate to invoice:", error);
+      toast({
+        title: 'Conversion Failed',
+        description: 'There was an error converting the estimate to an invoice.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
 
   if (isLoading) {
     return <div>Loading estimate...</div>;
@@ -73,6 +152,7 @@ export default function EstimateDetailPage() {
     Sent: 'secondary',
     Rejected: 'destructive',
     Draft: 'outline',
+    Converted: 'default',
   };
 
   return (
@@ -99,9 +179,18 @@ export default function EstimateDetailPage() {
               <Download className="h-4 w-4 mr-2"/>
               Download
             </Button>
-            <Button size="sm">
-              <FilePlus2 className="h-4 w-4 mr-2"/>
-              Convert to Invoice
+            <Button size="sm" onClick={handleConvertToInvoice} disabled={isConverting}>
+              {isConverting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin"/>
+                  Converting...
+                </>
+              ) : (
+                <>
+                  <FilePlus2 className="h-4 w-4 mr-2"/>
+                  {estimate.convertedInvoiceId ? 'View Invoice' : 'Convert to Invoice'}
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -176,8 +265,18 @@ export default function EstimateDetailPage() {
         <Button variant="outline" size="sm">
           Download
         </Button>
-        <Button size="sm">
-          Convert to Invoice
+        <Button size="sm" onClick={handleConvertToInvoice} disabled={isConverting}>
+            {isConverting ? (
+                <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin"/>
+                Converting...
+                </>
+            ) : (
+                <>
+                <FilePlus2 className="h-4 w-4 mr-2"/>
+                 {estimate.convertedInvoiceId ? 'View Invoice' : 'Convert to Invoice'}
+                </>
+            )}
         </Button>
       </div>
     </div>
