@@ -50,47 +50,50 @@ export default function Dashboard() {
 
   const isLoading = isLoadingClients || isLoadingEstimates || isLoadingInvoices;
 
-  const combinedEstimates = useMemo(() => {
-    if (!estimates || !clientsById) return [];
-    return estimates.map(e => ({...e, client: clientsById[e.clientId]}));
-  }, [estimates, clientsById]);
-
-  const combinedInvoices = useMemo(() => {
-    if (!invoices || !clientsById) return [];
-    return invoices.map(i => ({...i, client: clientsById[i.clientId]}));
-  }, [invoices, clientsById]);
+  // --- DERIVED VALUES ---
 
   const totalRevenue = useMemo(() => {
     if (!invoices) return 0;
-    return invoices.reduce((sum, inv) => sum + (inv.amountPaid || 0), 0);
+    return invoices
+      .filter((inv) => inv.status === 'Paid')
+      .reduce((sum, inv) => sum + (inv.amountPaid || 0), 0);
   }, [invoices]);
-  
+
   const openEstimates = useMemo(() => {
     if (!estimates) return 0;
     return estimates.filter(
-      (est) => est.status === 'Sent' || est.status === 'Draft'
+      (est) => est.status === 'Sent' || est.status === 'Approved'
     ).length;
   }, [estimates]);
 
   const overdueInvoices = useMemo(() => {
     if (!invoices) return 0;
-    return invoices.filter(
-      (inv) => inv.status === 'Overdue'
-    ).length;
+    return invoices.filter((inv) => inv.status === 'Overdue').length;
   }, [invoices]);
-  
-  const clientsCount = clients?.length ?? 0;
 
-  const recentActivity = useMemo(() => 
-    [...(combinedEstimates || []), ...(combinedInvoices || [])]
-    .sort(
-      (a, b) => {
-        const dateA = new Date('invoiceDate' in a ? a.invoiceDate : a.estimateDate).getTime();
-        const dateB = new Date('invoiceDate' in b ? b.invoiceDate : b.estimateDate).getTime();
-        return dateB - dateA;
-      }
-    )
-    .slice(0, 5), [combinedEstimates, combinedInvoices]);
+  const activeClients = useMemo(() => {
+    const clientIds = new Set<string>();
+    (estimates || []).forEach(e => clientIds.add(e.clientId));
+    (invoices || []).forEach(i => clientIds.add(i.clientId));
+    return clientIds.size;
+  }, [estimates, invoices]);
+  
+  const totalInvoices = useMemo(() => invoices?.length ?? 0, [invoices]);
+
+
+  const recentActivity = useMemo(() => {
+    const combinedEstimates = (estimates || []).map(e => ({...e, client: clientsById[e.clientId]}));
+    const combinedInvoices = (invoices || []).map(i => ({...i, client: clientsById[i.clientId]}));
+
+    return [...combinedEstimates, ...combinedInvoices]
+      .sort((a, b) => {
+          const dateA = new Date('invoiceDate' in a ? a.invoiceDate : a.estimateDate).getTime();
+          const dateB = new Date('invoiceDate' in b ? b.invoiceDate : b.estimateDate).getTime();
+          return dateB - dateA;
+        }
+      )
+      .slice(0, 5)
+  }, [estimates, invoices, clientsById]);
   
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Paid: 'default',
@@ -108,7 +111,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -117,7 +120,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
             <p className="text-xs text-muted-foreground">
-              Based on amount paid on all invoices
+              Sum of all paid invoices
             </p>
           </CardContent>
         </Card>
@@ -129,7 +132,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">+{openEstimates}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting client approval
+              Sent or Approved
             </p>
           </CardContent>
         </Card>
@@ -141,7 +144,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold">+{overdueInvoices}</div>
             <p className="text-xs text-muted-foreground">
-              Require follow-up
+              Awaiting payment
             </p>
           </CardContent>
         </Card>
@@ -151,9 +154,21 @@ export default function Dashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{clientsCount}</div>
+            <div className="text-2xl font-bold">+{activeClients}</div>
             <p className="text-xs text-muted-foreground">
-              Across all documents
+              Clients with docs
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{totalInvoices}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all statuses
             </p>
           </CardContent>
         </Card>
