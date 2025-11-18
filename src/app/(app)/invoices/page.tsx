@@ -16,15 +16,30 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { MoreHorizontal } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc, deleteDoc } from 'firebase/firestore';
 import type { Invoice, Client } from '@/lib/types';
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { DeleteItemAlert } from '@/components/delete-item-alert';
+import { useToast } from '@/hooks/use-toast';
 
 export default function InvoicesPage() {
   const { firestore, user } = useFirebase();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : null, [user]);
   const clientsCollection = useMemoFirebase(() => clientsPath ? collection(firestore, clientsPath) : null, [firestore, clientsPath]);
@@ -54,48 +69,101 @@ export default function InvoicesPage() {
     Overdue: 'destructive',
     Draft: 'outline',
   };
+  
+  const handleDeleteConfirm = async () => {
+    if (deletingItemId && user) {
+      const itemRef = doc(firestore, 'users', user.uid, 'invoices', deletingItemId);
+      try {
+        await deleteDoc(itemRef);
+        setDeletingItemId(null);
+        toast({ title: "Invoice Deleted", description: "The invoice has been successfully deleted."});
+      } catch (error) {
+        console.error("Error deleting invoice: ", error);
+        toast({
+          title: "Error",
+          description: "Could not delete invoice. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Invoices</CardTitle>
-        <CardDescription>
-          Manage your invoices and track payments.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Number</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
-            {!isLoading && combinedInvoices?.map((invoice) => (
-              <TableRow key={invoice.id}>
-                <TableCell className="font-medium">
-                  <Link href={`/invoices/${invoice.id}`} className="text-primary hover:underline">
-                    {invoice.invoiceNumber}
-                  </Link>
-                </TableCell>
-                <TableCell>{invoice.client?.firstName} {invoice.client?.lastName}</TableCell>
-                <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Badge variant={statusColors[invoice.status] || 'outline'}>{invoice.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(invoice.total)}
-                </TableCell>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Invoices</CardTitle>
+          <CardDescription>
+            Manage your invoices and track payments.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Number</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                 <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {isLoading && <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>}
+              {!isLoading && combinedInvoices?.map((invoice) => (
+                <TableRow key={invoice.id}>
+                  <TableCell className="font-medium">
+                    <Link href={`/invoices/${invoice.id}`} className="text-primary hover:underline">
+                      {invoice.invoiceNumber}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{invoice.client?.firstName} {invoice.client?.lastName}</TableCell>
+                  <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusColors[invoice.status] || 'outline'}>{invoice.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {formatCurrency(invoice.total)}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => router.push(`/invoices/${invoice.id}/edit`)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDeletingItemId(invoice.id)} className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+       {deletingItemId && (
+        <DeleteItemAlert
+          onDeleteConfirm={handleDeleteConfirm}
+          onOpenChange={(isOpen) => !isOpen && setDeletingItemId(null)}
+          itemName="invoice"
+        />
+      )}
+    </>
   );
 }

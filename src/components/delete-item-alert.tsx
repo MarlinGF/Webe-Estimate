@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 interface DeleteItemAlertProps {
   onDeleteConfirm: () => void;
   onOpenChange: (open: boolean) => void;
-  itemName: 'service' | 'part' | 'tax';
+  itemName: 'service' | 'part' | 'tax' | 'estimate' | 'invoice';
 }
 
 export function DeleteItemAlert({ onDeleteConfirm, onOpenChange, itemName }: DeleteItemAlertProps) {
@@ -42,5 +42,3 @@ export function DeleteItemAlert({ onDeleteConfirm, onOpenChange, itemName }: Del
     </AlertDialog>
   );
 }
-
-    

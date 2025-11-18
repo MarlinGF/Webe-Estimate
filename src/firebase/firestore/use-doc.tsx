@@ -7,6 +7,7 @@ import {
   DocumentData,
   FirestoreError,
   DocumentSnapshot,
+  getDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -56,8 +57,6 @@ export function useDoc<T = any>(
     }
 
     setIsLoading(true);
-    setError(null);
-    // Optional: setData(null); // Clear previous data instantly
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
