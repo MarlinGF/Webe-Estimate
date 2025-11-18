@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, PlusCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, deleteDoc } from 'firebase/firestore';
@@ -91,11 +91,19 @@ export default function InvoicesPage() {
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle>Invoices</CardTitle>
-          <CardDescription>
-            Manage your invoices and track payments.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Invoices</CardTitle>
+            <CardDescription>
+              Manage your invoices and track payments.
+            </CardDescription>
+          </div>
+           <Button asChild size="sm" className="gap-1">
+            <Link href="/invoices/create">
+              <PlusCircle className="h-4 w-4" />
+              Create Invoice
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>

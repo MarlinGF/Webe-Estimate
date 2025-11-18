@@ -53,7 +53,8 @@ export interface Estimate {
 export interface Invoice {
   id: string;
   invoiceNumber: string;
-  estimateNumber: string;
+  estimateId?: string;
+  estimateNumber?: string;
   clientId: string;
   client?: Client;
   invoiceDate: string;

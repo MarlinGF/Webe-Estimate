@@ -45,7 +45,7 @@ export default function InvoiceDetailPage() {
     return <div>Loading invoice...</div>;
   }
 
-  if (!invoice || !client) {
+  if (!invoice) {
     notFound();
   }
 
@@ -96,12 +96,12 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-semibold">{client.firstName} {client.lastName}</div>
+              <div className="font-semibold">{client ? `${client.firstName} ${client.lastName}` : invoice.clientId}</div>
               <div className="text-muted-foreground">
-                {client.address}
+                {client?.address}
               </div>
               <div className="text-muted-foreground">
-                {client.email}
+                {client?.email}
               </div>
             </div>
           </div>
