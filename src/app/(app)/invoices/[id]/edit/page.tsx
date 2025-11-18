@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -149,22 +150,22 @@ export default function EditInvoicePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !invoiceRef || !lineItemsRef) return;
     
-    const invoiceData = {
-      ...data,
-      userId: user.uid,
-      subtotal,
-      tax: taxAmount,
-      total,
-      taxId: data.taxId === 'none' ? null : data.taxId,
-    };
-
-    const { lineItems, ...invoiceCore } = invoiceData;
+    const { lineItems, ...coreData } = data;
+    
+    const invoiceCoreData = {
+        ...coreData,
+        userId: user.uid,
+        subtotal,
+        tax: taxAmount,
+        total,
+        taxId: data.taxId === 'none' ? null : data.taxId,
+      };
     
     try {
         const batch = writeBatch(firestore);
 
         // 1. Update the main invoice document
-        batch.update(invoiceRef, invoiceCore);
+        batch.update(invoiceRef, invoiceCoreData);
         
         // 2. Delete all existing line items for this invoice
         const oldLineItemsSnapshot = await getDocs(lineItemsRef);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -144,22 +145,22 @@ export default function EditEstimatePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore || !estimateRef || !lineItemsRef) return;
     
-    const estimateData = {
-      ...data,
+    const { lineItems, ...coreData } = data;
+    
+    const estimateCoreData = {
+      ...coreData,
       userId: user.uid,
       subtotal,
       tax: taxAmount,
       total,
       taxId: data.taxId === 'none' ? null : data.taxId,
     };
-
-    const { lineItems, ...estimateCore } = estimateData;
     
     try {
         const batch = writeBatch(firestore);
 
         // 1. Update the main estimate document
-        batch.update(estimateRef, estimateCore);
+        batch.update(estimateRef, estimateCoreData);
         
         // 2. Delete all existing line items for this estimate
         const oldLineItemsSnapshot = await getDocs(lineItemsRef);
