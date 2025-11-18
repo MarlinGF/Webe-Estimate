@@ -142,7 +142,7 @@ export default function EditInvoicePage() {
   };
 
  const onSubmit = async (data: FormValues) => {
-    if (!user || !firestore || !invoiceRef || !lineItemsRef) return;
+    if (!user || !firestore || !invoiceRef) return;
     
     const { lineItems, ...coreData } = data;
 
@@ -156,20 +156,21 @@ export default function EditInvoicePage() {
       };
     
     try {
+        const lineItemsCollectionRef = collection(invoiceRef, 'lineItems');
         const batch = writeBatch(firestore);
 
         // 1. Update the main invoice document
         batch.update(invoiceRef, invoiceCoreData);
         
         // 2. Delete all existing line items for this invoice
-        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
+        const oldLineItemsSnapshot = await getDocs(lineItemsCollectionRef);
         oldLineItemsSnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
 
         // 3. Add the new line items
         lineItems.forEach(item => {
-            const newItemRef = doc(collection(invoiceRef, 'lineItems'));
+            const newItemRef = doc(lineItemsCollectionRef);
             batch.set(newItemRef, item);
         });
         
@@ -472,3 +473,5 @@ export default function EditInvoicePage() {
     </form>
   );
 }
+
+    
