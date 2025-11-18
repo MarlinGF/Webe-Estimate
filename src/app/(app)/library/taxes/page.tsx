@@ -1,0 +1,147 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { useCollection, useFirebase, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import type { Tax } from '@/lib/types';
+import { AddTaxDialog } from '@/components/add-tax-dialog';
+import { EditTaxDialog } from '@/components/edit-tax-dialog';
+import { DeleteItemAlert } from '@/components/delete-item-alert';
+
+export default function TaxesPage() {
+  const { firestore } = useFirebase();
+  const [editingTax, setEditingTax] = useState<Tax | null>(null);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  
+  const taxesCollection = useMemoFirebase(() => firestore ? collection(firestore, 'taxes') : null, [firestore]);
+  const { data: taxes, isLoading } = useCollection<Tax>(taxesCollection);
+
+  const handleAddTax = (newTax: Omit<Tax, 'id'>) => {
+    if (!taxesCollection) return;
+    addDocumentNonBlocking(taxesCollection, newTax);
+  };
+
+  const handleUpdateTax = (updatedTax: Tax) => {
+    if (!firestore) return;
+    const taxRef = doc(firestore, 'taxes', updatedTax.id);
+    const { id, ...taxData } = updatedTax;
+    updateDocumentNonBlocking(taxRef, taxData);
+    setEditingTax(null);
+  };
+  
+  const handleDeleteConfirm = () => {
+    if (deletingItemId && firestore) {
+      const itemRef = doc(firestore, 'taxes', deletingItemId);
+      deleteDocumentNonBlocking(itemRef);
+      setDeletingItemId(null);
+    }
+  };
+  
+  const formatRate = (rate: number) => {
+    return `${(rate * 100).toFixed(3)}%`;
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Taxes</CardTitle>
+          </div>
+          <AddTaxDialog onAddTax={handleAddTax}>
+            <Button size="sm" className="gap-1">
+              <PlusCircle className="h-4 w-4" />
+              Add Tax
+            </Button>
+          </AddTaxDialog>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && <TableRow><TableCell colSpan={3}>Loading...</TableCell></TableRow>}
+              {!isLoading && taxes?.map((tax) => (
+                <TableRow key={tax.id}>
+                  <TableCell className="font-medium">{tax.name}</TableCell>
+                  <TableCell>{formatRate(tax.rate)}</TableCell>
+                   <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onSelect={() => setEditingTax(tax)}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setDeletingItemId(tax.id)} className="text-destructive">
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      
+      {editingTax && (
+        <EditTaxDialog
+          tax={editingTax}
+          onUpdateTax={handleUpdateTax}
+          onOpenChange={(isOpen) => !isOpen && setEditingTax(null)}
+        />
+      )}
+
+      {deletingItemId && (
+        <DeleteItemAlert
+          onDeleteConfirm={handleDeleteConfirm}
+          onOpenChange={(isOpen) => !isOpen && setDeletingItemId(null)}
+          itemName="tax"
+        />
+      )}
+    </>
+  );
+}
+
+    

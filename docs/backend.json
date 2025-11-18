@@ -251,6 +251,31 @@
         "cost",
         "price"
       ]
+    },
+    "Tax": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tax",
+      "type": "object",
+      "description": "Represents a tax rate that can be applied to estimates and invoices.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the tax rate."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the tax (e.g., 'City Sales Tax')."
+        },
+        "rate": {
+          "type": "number",
+          "description": "The tax rate as a decimal (e.g., 0.0825 for 8.25%)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "rate"
+      ]
     }
   },
   "auth": {
@@ -320,8 +345,20 @@
           },
           "description": "Stores parts used in services. Globally accessible data."
         }
+      },
+      {
+        "path": "taxes/{taxId}",
+        "definition": {
+          "entityName": "Tax",
+          "schema": {
+            "$ref": "#/backend/entities/Tax"
+          },
+          "description": "Stores tax rates that can be applied globally to estimates and invoices."
+        }
       }
     ],
     "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). It also adheres to the design strategy mandates, including denormalization, structural segregation and access modeling.\n\nAuthorization Independence is achieved through denormalization. For instance, instead of relying on parent document attributes to authorize access to subcollections, relevant authorization data (like `ownerId` or a `members` map) is copied into the subcollection documents, eliminating the need for `get()` calls in security rules. This ensures that authorization checks are self-contained and atomic.\n\nStructural Segregation is implemented by storing different types of data in separate collections based on their access requirements. User-specific data is stored under `/users/{userId}`, collaborative data utilizes Membership Maps, and global roles are managed through dedicated collections like `/roles_admin/{uid}`. This approach simplifies security rules by ensuring that all documents within a collection share a homogeneous security posture.\n\nAccess Modeling follows consistent patterns. Private data is managed through path-based ownership (e.g., `/users/{userId}/clients/{clientId}`). Collaborative access is controlled via Membership Maps (denormalized where necessary). Global roles are implemented using existence checks in dedicated role collections.\n\nQAPs (Rules are not Filters) are supported by the structural segregation. Since each collection has a uniform security posture, list operations can be secured without filtering based on document content.\n\nSpecifically, this structure facilitates easy querying of clients, estimates, and invoices associated with a particular user. The relationships between entities (e.g., a Client having multiple Estimates) are captured using hierarchical paths, promoting straightforward and efficient security rule design."
   }
 }
+
+    

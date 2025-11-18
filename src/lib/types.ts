@@ -22,6 +22,12 @@ export interface Part extends Item {
     cost: number;
 }
 
+export interface Tax {
+  id: string;
+  name: string;
+  rate: number;
+}
+
 export interface LineItem {
   id: string;
   description: string;
@@ -67,3 +73,5 @@ export interface Project {
   postedBy: string;
   location: string;
 }
+
+    

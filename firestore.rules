@@ -1,6 +1,6 @@
 /**
  * @fileOverview This ruleset enforces a strict user-ownership model for client-related data
- * stored under `/users/{userId}`. Services and parts are globally accessible.
+ * stored under `/users/{userId}`. Services, parts, and taxes are globally accessible.
  *
  * Data Structure:
  * - `users/{userId}/clients/{clientId}`: Stores client information, owned by the specified user.
@@ -9,18 +9,19 @@
  * - `users/{userId}/estimates/{estimateId}/lineItems/{lineItemId}`: Stores line items for an estimate, owned by the specified user.
  * - `/services/{serviceId}`: Stores publicly accessible service information.
  * - `/parts/{partId}`: Stores publicly accessible part information.
+ * - `/taxes/{taxId}`: Stores publicly accessible tax information.
  *
  * Key Security Decisions:
  * - Clients, estimates, invoices, and line items are strictly owned by the user ID in the path.
  * - Listing of clients, estimates, invoices, and line items is only allowed for the owner.
- * - Services and parts are publicly readable, but can be created, updated, and deleted by any authenticated user.
+ * - Services, parts, and taxes are publicly readable, but can be created, updated, and deleted by any authenticated user.
  *
  * Denormalization for Authorization:
  * -  The `clientId`, `estimateId`, and `invoiceId` are denormalized into subcollection documents to avoid costly `get()` calls in security rules.
  *
  * Structural Segregation:
  * - User-specific data (clients, estimates, invoices, line items) is stored under `users/{userId}`.
- * - Public data (services, parts) is stored in top-level collections.
+ * - Public data (services, parts, taxes) is stored in top-level collections.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -115,5 +116,20 @@ service cloud.firestore {
       allow list: if true;
       allow create, update, delete: if isSignedIn();
     }
+
+     /**
+     * @description Allows anyone to read tax data. Write operations are allowed for authenticated users.
+     * @path /taxes/{taxId}
+     * @allow (get, list) - Any user, signed in or not, can read tax data.
+     * @allow (create, update, delete) - Any authenticated user can create, update, or delete a tax.
+     * @principle Public read access with restricted write access for authenticated users.
+     */
+    match /taxes/{taxId} {
+      allow get: if true;
+      allow list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
   }
 }
+
+    

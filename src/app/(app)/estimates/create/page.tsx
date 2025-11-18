@@ -36,13 +36,14 @@ import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
-import type { Item, Client, Service, Part } from '@/lib/types';
+import type { Item, Client, Service, Part, Tax } from '@/lib/types';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, addDoc } from 'firebase/firestore';
 
 
 type FormValues = {
   clientId: string;
+  taxId: string;
   estimateNumber: string;
   estimateDate: string;
   expiryDate: string;
@@ -63,6 +64,9 @@ export default function CreateEstimatePage() {
   const partsCollection = useMemoFirebase(() => collection(firestore, 'parts'), [firestore]);
   const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsCollection);
 
+  const taxesCollection = useMemoFirebase(() => collection(firestore, 'taxes'), [firestore]);
+  const { data: taxes, isLoading: isLoadingTaxes } = useCollection<Tax>(taxesCollection);
+
 
   const {
     register,
@@ -81,6 +85,7 @@ export default function CreateEstimatePage() {
         .toISOString()
         .split('T')[0],
       lineItems: [{ description: '', quantity: 1, price: 0 }],
+      taxId: 'none',
     },
   });
 
@@ -90,21 +95,27 @@ export default function CreateEstimatePage() {
   });
 
   const watchLineItems = watch('lineItems');
+  const watchTaxId = watch('taxId');
   const [subtotal, setSubtotal] = useState(0);
-  const [tax, setTax] = useState(0);
+  const [taxAmount, setTaxAmount] = useState(0);
   const [total, setTotal] = useState(0);
-  const taxRate = 0.08; // 8%
+  const [selectedTaxRate, setSelectedTaxRate] = useState(0);
+
+  useEffect(() => {
+    const selectedTax = taxes?.find(t => t.id === watchTaxId);
+    setSelectedTaxRate(selectedTax?.rate || 0);
+  }, [watchTaxId, taxes]);
 
   useEffect(() => {
     const newSubtotal = watchLineItems.reduce(
       (acc, item) => acc + (item.quantity || 0) * (item.price || 0),
       0
     );
-    const newTax = newSubtotal * taxRate;
+    const newTax = newSubtotal * selectedTaxRate;
     setSubtotal(newSubtotal);
-    setTax(newTax);
+    setTaxAmount(newTax);
     setTotal(newSubtotal + newTax);
-  }, [watchLineItems]);
+  }, [watchLineItems, selectedTaxRate]);
 
   const handleAddItemsFromLibrary = (items: Item[]) => {
     if (fields.length === 1 && !watchLineItems[0].description && watchLineItems[0].price === 0) {
@@ -123,7 +134,7 @@ export default function CreateEstimatePage() {
       userId: user.uid,
       status: 'Draft',
       subtotal,
-      tax,
+      tax: taxAmount,
       total,
     };
 
@@ -219,7 +230,7 @@ export default function CreateEstimatePage() {
                   <Input id="estimateNumber" {...register('estimateNumber')} />
                 </div>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="estimateDate">Estimate Date</Label>
                   <Input
@@ -233,6 +244,28 @@ export default function CreateEstimatePage() {
                     id="expiryDate"
                     type="date"
                     {...register('expiryDate')}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="taxId">Tax</Label>
+                   <Controller
+                    name="taxId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingTaxes}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingTaxes ? "Loading taxes..." : "Select a tax"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">No tax</SelectItem>
+                          {taxes?.map((tax) => (
+                            <SelectItem key={tax.id} value={tax.id}>
+                              {tax.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   />
                 </div>
               </div>
@@ -344,8 +377,8 @@ export default function CreateEstimatePage() {
                 <span>{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span>Tax ({(taxRate * 100).toFixed(0)}%)</span>
-                <span>{formatCurrency(tax)}</span>
+                <span>Tax ({(selectedTaxRate * 100).toFixed(2)}%)</span>
+                <span>{formatCurrency(taxAmount)}</span>
               </div>
               <div className="flex items-center justify-between font-semibold text-lg">
                 <span>Total</span>
@@ -366,3 +399,5 @@ export default function CreateEstimatePage() {
     </form>
   );
 }
+
+    

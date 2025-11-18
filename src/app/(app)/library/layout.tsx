@@ -21,6 +21,7 @@ export default function LibraryLayout({
   const navLinks = [
     { href: '/library/services', label: 'Services' },
     { href: '/library/parts', label: 'Parts' },
+    { href: '/library/taxes', label: 'Taxes' },
   ];
 
   return (
@@ -55,3 +56,5 @@ export default function LibraryLayout({
     </div>
   );
 }
+
+    
