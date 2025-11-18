@@ -24,8 +24,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useFirebase } from '@/firebase';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Button } from './button';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
-import { Input } from './input';
+import { useToast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   value?: string;
@@ -34,10 +33,14 @@ interface RichTextEditorProps {
 
 const EditorToolbar = ({ editor }: { editor: any }) => {
   const { storage } = useFirebase();
+  const { toast } = useToast();
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = useCallback(async (file: File) => {
-    if (!storage || !editor) return;
+    if (!storage || !editor) {
+        toast({ title: "Error", description: "Storage or editor not available.", variant: "destructive" });
+        return;
+    };
 
     try {
       const storageRef = ref(storage, `images/${Date.now()}_${file.name}`);
@@ -46,9 +49,9 @@ const EditorToolbar = ({ editor }: { editor: any }) => {
       editor.chain().focus().setImage({ src: url }).run();
     } catch (error) {
       console.error('Error uploading image:', error);
-      // You might want to show a toast notification here
+      toast({ title: "Image Upload Failed", description: "Could not upload the image. Please try again.", variant: "destructive" });
     }
-  }, [storage, editor]);
+  }, [storage, editor, toast]);
 
   const onImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -208,7 +211,7 @@ export const RichTextEditor = ({ value, onChange }: RichTextEditorProps) => {
   });
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full">
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
