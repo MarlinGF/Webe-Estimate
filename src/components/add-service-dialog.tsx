@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -17,10 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ImageIcon, Upload } from 'lucide-react';
 import type { Service } from '@/lib/types';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 
 const serviceSchema = z.object({
@@ -47,6 +47,7 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
   const {
     register,
     handleSubmit,
+    control,
     reset,
     watch,
     setValue,
@@ -80,7 +81,12 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
 
   useEffect(() => {
     if (!open) {
-      reset();
+      reset({
+        name: '',
+        description: '',
+        price: undefined,
+        imageUrl: '',
+      });
     }
   }, [open, reset]);
 
@@ -90,7 +96,6 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
       title: 'Service Created',
       description: `${data.name} has been successfully added to your library.`,
     });
-    reset();
     setOpen(false);
   };
 
@@ -99,7 +104,7 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Add New Service</DialogTitle>
           <DialogDescription>
@@ -114,7 +119,16 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" {...register('description')} />
+             <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                    <RichTextEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    />
+                )}
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="price">Price</Label>
@@ -146,6 +160,7 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
              <Input type="hidden" {...register('imageUrl')} />
           </div>
           <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Service'}
             </Button>

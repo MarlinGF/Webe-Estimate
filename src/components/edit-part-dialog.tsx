@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ImageIcon, Upload, X } from 'lucide-react';
 import type { Part } from '@/lib/types';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 const partSchema = z.object({
   name: z.string().min(1, 'Part name is required'),
@@ -49,6 +49,7 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
   const {
     register,
     handleSubmit,
+    control,
     reset,
     watch,
     setValue,
@@ -99,7 +100,7 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
 
   return (
     <Dialog open={true} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Edit Part</DialogTitle>
           <DialogDescription>
@@ -114,7 +115,17 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" {...register('description')} />
+            <Controller
+                name="description"
+                control={control}
+                defaultValue={part.description}
+                render={({ field }) => (
+                    <RichTextEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    />
+                )}
+            />
           </div>
            <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">

@@ -29,7 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
 import { AiDescriptionGenerator } from '@/components/ai-description-generator';
 import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
@@ -39,6 +38,7 @@ import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
 import type { Item, Client, Service, Part, Tax } from '@/lib/types';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, addDoc } from 'firebase/firestore';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 
 type FormValues = {
@@ -122,7 +122,7 @@ export default function CreateEstimatePage() {
       remove(0);
     }
     items.forEach(item => {
-        append({ description: item.name, quantity: 1, price: item.price });
+        append({ description: item.description || item.name, quantity: 1, price: item.price });
     });
   };
 
@@ -136,6 +136,7 @@ export default function CreateEstimatePage() {
       subtotal,
       tax: taxAmount,
       total,
+      taxId: data.taxId === 'none' ? undefined : data.taxId,
     };
 
     const { lineItems, ...estimateCore } = estimateData;
@@ -289,18 +290,23 @@ export default function CreateEstimatePage() {
                   {fields.map((field, index) => (
                     <TableRow key={field.id}>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Textarea
-                            {...register(`lineItems.${index}.description`)}
-                            placeholder="Item description"
-                            className="text-sm"
-                          />
-                          <AiDescriptionGenerator
-                            onInsert={(desc) =>
-                              setValue(`lineItems.${index}.description`, desc)
-                            }
-                          />
-                        </div>
+                         <Controller
+                            name={`lineItems.${index}.description`}
+                            control={control}
+                            render={({ field: controllerField }) => (
+                                <div className="flex items-start gap-1">
+                                <RichTextEditor
+                                    value={controllerField.value}
+                                    onChange={controllerField.onChange}
+                                />
+                                <AiDescriptionGenerator
+                                    onInsert={(desc) =>
+                                    setValue(`lineItems.${index}.description`, desc)
+                                    }
+                                />
+                                </div>
+                            )}
+                        />
                       </TableCell>
                       <TableCell>
                         <Input

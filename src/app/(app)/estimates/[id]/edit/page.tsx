@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -30,7 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
 import { AiDescriptionGenerator } from '@/components/ai-description-generator';
 import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
@@ -40,11 +38,12 @@ import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
 import type { Item, Client, Service, Part, Tax, Estimate, LineItem } from '@/lib/types';
 import { useCollection, useDoc, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, updateDoc, getDocs } from 'firebase/firestore';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 
 type FormValues = {
   clientId: string;
-  taxId: string | 'none';
+  taxId: string;
   estimateNumber: string;
   estimateDate: string;
   expiryDate: string;
@@ -94,17 +93,17 @@ export default function EditEstimatePage() {
   });
 
   useEffect(() => {
-    if (estimate) {
-        const initialFormValues: any = { 
-            ...estimate,
-            taxId: estimate.taxId || 'none' 
-        };
-        reset(initialFormValues);
+    // Only reset the form when both the estimate and its line items have been loaded.
+    if (estimate && lineItemsData && !isLoadingEstimate && !isLoadingLineItems) {
+      const initialFormValues: Partial<FormValues> = {
+        ...estimate,
+        taxId: estimate.taxId || 'none',
+        lineItems: lineItemsData.map(({ id, ...rest }) => rest)
+      };
+      reset(initialFormValues);
     }
-    if (lineItemsData) {
-        replace(lineItemsData.map(({id, ...rest}) => rest));
-    }
-}, [estimate, lineItemsData, reset, replace]);
+  }, [estimate, lineItemsData, reset, isLoadingEstimate, isLoadingLineItems]);
+
 
   const watchLineItems = watch('lineItems');
   const watchTaxId = watch('taxId');
@@ -132,12 +131,12 @@ export default function EditEstimatePage() {
 
   const handleAddItemsFromLibrary = (items: Item[]) => {
     items.forEach(item => {
-        append({ description: item.name, quantity: 1, price: item.price });
+        append({ description: item.description || item.name, quantity: 1, price: item.price });
     });
   };
 
  const onSubmit = async (data: FormValues) => {
-    if (!user || !firestore || !estimateRef || !lineItemsRef) return;
+    if (!user || !firestore || !estimateRef) return;
     
     const { lineItems, ...coreData } = data;
 
@@ -151,20 +150,21 @@ export default function EditEstimatePage() {
     };
     
     try {
+        const lineItemsCollectionRef = collection(estimateRef, 'lineItems');
         const batch = writeBatch(firestore);
 
         // 1. Update the main estimate document
         batch.update(estimateRef, estimateCoreData);
         
         // 2. Delete all existing line items for this estimate
-        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
+        const oldLineItemsSnapshot = await getDocs(lineItemsCollectionRef);
         oldLineItemsSnapshot.forEach(doc => {
             batch.delete(doc.ref);
         });
 
         // 3. Add the new line items
         lineItems.forEach(item => {
-            const newItemRef = doc(collection(estimateRef, 'lineItems'));
+            const newItemRef = doc(lineItemsCollectionRef);
             batch.set(newItemRef, item);
         });
         
@@ -337,18 +337,23 @@ export default function EditEstimatePage() {
                   {fields.map((field, index) => (
                     <TableRow key={field.id}>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Textarea
-                            {...register(`lineItems.${index}.description`)}
-                            placeholder="Item description"
-                            className="text-sm"
-                          />
-                          <AiDescriptionGenerator
-                            onInsert={(desc) =>
-                              setValue(`lineItems.${index}.description`, desc)
-                            }
-                          />
-                        </div>
+                         <Controller
+                            name={`lineItems.${index}.description`}
+                            control={control}
+                            render={({ field: controllerField }) => (
+                                <div className="flex items-start gap-1">
+                                <RichTextEditor
+                                    value={controllerField.value}
+                                    onChange={controllerField.onChange}
+                                />
+                                <AiDescriptionGenerator
+                                    onInsert={(desc) =>
+                                    setValue(`lineItems.${index}.description`, desc)
+                                    }
+                                />
+                                </div>
+                            )}
+                        />
                       </TableCell>
                       <TableCell>
                         <Input

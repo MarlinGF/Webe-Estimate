@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -17,10 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ImageIcon, Upload } from 'lucide-react';
 import type { Part } from '@/lib/types';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 const partSchema = z.object({
   name: z.string().min(1, 'Part name is required'),
@@ -50,6 +50,7 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
   const {
     register,
     handleSubmit,
+    control,
     reset,
     watch,
     setValue,
@@ -82,7 +83,13 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
 
   useEffect(() => {
     if (!open) {
-      reset();
+      reset({
+        name: '',
+        description: '',
+        price: undefined,
+        cost: undefined,
+        imageUrl: '',
+      });
     }
   }, [open, reset]);
 
@@ -92,7 +99,6 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
       title: 'Part Created',
       description: `${data.name} has been successfully added to your library.`,
     });
-    reset();
     setOpen(false);
   };
 
@@ -101,7 +107,7 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Add New Part</DialogTitle>
           <DialogDescription>
@@ -116,7 +122,16 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" {...register('description')} />
+             <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                    <RichTextEditor
+                    value={field.value}
+                    onChange={field.onChange}
+                    />
+                )}
+            />
           </div>
            <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
@@ -155,6 +170,7 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
              <Input type="hidden" {...register('imageUrl')} />
           </div>
           <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Part'}
             </Button>

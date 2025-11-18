@@ -111,7 +111,7 @@ export default function EstimateDetailPage() {
             <TableBody>
               {lineItems?.map((item) => (
                 <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.description}</TableCell>
+                  <TableCell className="font-medium"><div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.description }} /></TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell>{formatCurrency(item.price)}</TableCell>
                   <TableCell className="text-right">

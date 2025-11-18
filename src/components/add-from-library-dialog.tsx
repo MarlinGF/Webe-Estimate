@@ -108,7 +108,7 @@ export function AddFromLibraryDialog({
                 </TableCell>
               <TableCell>
                 <div className="font-medium">{item.name}</div>
-                <div className="text-sm text-muted-foreground">{item.description}</div>
+                {item.description && <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-xs truncate" dangerouslySetInnerHTML={{ __html: item.description }} />}
               </TableCell>
               <TableCell className="text-right">
                 {formatCurrency(item.price)}

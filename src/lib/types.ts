@@ -45,7 +45,7 @@ export interface Estimate {
   lineItems?: LineItem[]; // lineItems are now a subcollection
   subtotal: number;
   tax: number;
-  taxId?: string | null;
+  taxId?: string;
   total: number;
   status: 'Draft' | 'Sent' | 'Approved' | 'Rejected';
 }
@@ -62,7 +62,7 @@ export interface Invoice {
   lineItems?: LineItem[]; // lineItems are now a subcollection
   subtotal: number;
   tax: number;
-  taxId?: string | null;
+  taxId?: string;
   total: number;
   amountPaid: number;
   status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
@@ -76,7 +76,3 @@ export interface Project {
   postedBy: string;
   location: string;
 }
-
-    
-
-    
