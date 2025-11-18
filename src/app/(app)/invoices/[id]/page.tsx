@@ -23,7 +23,15 @@ import { ArrowLeft, CreditCard, Download, Pencil } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
-import type { Client, Invoice, LineItem } from '@/lib/types';
+import type { Client, Invoice, LineItem, Service, Part } from '@/lib/types';
+import { LineItemRow } from '@/components/line-item-row';
+import { useMemo } from 'react';
+
+function stripHtml(html: string) {
+  if (typeof window === 'undefined') return '';
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || "";
+}
 
 export default function InvoiceDetailPage() {
   const params = useParams();
@@ -39,7 +47,20 @@ export default function InvoiceDetailPage() {
   const lineItemsRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'invoices', id, 'lineItems') : null, [firestore, user, id]);
   const { data: lineItems, isLoading: isLoadingLineItems } = useCollection<LineItem>(lineItemsRef);
 
-  const isLoading = isLoadingInvoice || isLoadingClient || isLoadingLineItems;
+  const servicesRef = useMemoFirebase(() => firestore ? collection(firestore, 'services') : null, [firestore]);
+  const { data: services, isLoading: isLoadingServices } = useCollection<Service>(servicesRef);
+
+  const partsRef = useMemoFirebase(() => firestore ? collection(firestore, 'parts') : null, [firestore]);
+  const { data: parts, isLoading: isLoadingParts } = useCollection<Part>(partsRef);
+
+  const libraryItems = useMemo(() => [...(services || []), ...(parts || [])], [services, parts]);
+
+  const isLoading = isLoadingInvoice || isLoadingClient || isLoadingLineItems || isLoadingServices || isLoadingParts;
+
+  const findLibraryItem = (description: string) => {
+    const plainDescription = stripHtml(description).trim();
+    return libraryItems.find(libItem => stripHtml(libItem.description || "").trim() === plainDescription || libItem.name === plainDescription);
+  };
 
   if (isLoading) {
     return <div>Loading invoice...</div>;
@@ -123,16 +144,17 @@ export default function InvoiceDetailPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lineItems?.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium"><div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.description }} /></TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{formatCurrency(item.price)}</TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(item.quantity * item.price)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {lineItems?.map((item) => {
+                const libraryItem = findLibraryItem(item.description);
+                return (
+                  <LineItemRow
+                    key={item.id}
+                    item={item}
+                    itemName={libraryItem?.name || stripHtml(item.description).split(' ')[0]}
+                    itemImage={libraryItem?.imageUrl}
+                  />
+                );
+              })}
             </TableBody>
           </Table>
           <Separator className="my-4" />
