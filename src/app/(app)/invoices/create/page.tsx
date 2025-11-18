@@ -315,6 +315,7 @@ export default function CreateInvoicePage() {
                                 <RichTextEditor
                                     value={controllerField.value}
                                     onChange={controllerField.onChange}
+                                    userId={user?.uid}
                                 />
                                 <AiDescriptionGenerator
                                     onInsert={(desc) =>
@@ -356,6 +357,7 @@ export default function CreateInvoicePage() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          type="button"
                           onClick={() => remove(index)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -429,3 +431,5 @@ export default function CreateInvoicePage() {
     </form>
   );
 }
+
+    

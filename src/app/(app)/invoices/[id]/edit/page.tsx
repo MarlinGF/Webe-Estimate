@@ -362,6 +362,7 @@ export default function EditInvoicePage() {
                                 <RichTextEditor
                                     value={controllerField.value}
                                     onChange={controllerField.onChange}
+                                    userId={user?.uid}
                                 />
                                 <AiDescriptionGenerator
                                     onInsert={(desc) =>
@@ -477,3 +478,5 @@ export default function EditInvoicePage() {
     </form>
   );
 }
+
+    

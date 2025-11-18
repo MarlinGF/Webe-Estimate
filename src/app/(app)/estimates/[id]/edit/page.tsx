@@ -346,6 +346,7 @@ export default function EditEstimatePage() {
                                 <RichTextEditor
                                     value={controllerField.value}
                                     onChange={controllerField.onChange}
+                                    userId={user?.uid}
                                 />
                                 <AiDescriptionGenerator
                                     onInsert={(desc) =>
@@ -453,3 +454,5 @@ export default function EditEstimatePage() {
     </form>
   );
 }
+
+    
