@@ -52,6 +52,12 @@ type FormValues = {
   lineItems: { description: string; quantity: number; price: number }[];
 };
 
+const getLocalDate = (date = new Date()) => {
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset*60*1000));
+    return localDate.toISOString().split('T')[0];
+}
+
 export default function CreateInvoicePage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -82,10 +88,8 @@ export default function CreateInvoicePage() {
       invoiceNumber: `INV-${new Date().getFullYear()}-${String(
         Math.floor(Math.random() * 1000)
       ).padStart(3, '0')}`,
-      invoiceDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 30))
-        .toISOString()
-        .split('T')[0],
+      invoiceDate: getLocalDate(),
+      dueDate: getLocalDate(new Date(new Date().setDate(new Date().getDate() + 30))),
       lineItems: [{ description: '', quantity: 1, price: 0 }],
       taxId: 'none',
       amountPaid: 0,
@@ -420,3 +424,5 @@ export default function CreateInvoicePage() {
     </form>
   );
 }
+
+    
