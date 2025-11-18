@@ -93,12 +93,12 @@ export default function EditInvoicePage() {
   });
 
   useEffect(() => {
-    if (invoice) {
-        const taxId = taxes?.find(t => t.rate === invoice.tax / invoice.subtotal)?.id || 'none';
+    if (invoice && taxes) {
+        const taxId = taxes.find(t => invoice.tax > 0 && t.rate === invoice.tax / invoice.subtotal)?.id || 'none';
         reset({ ...invoice, taxId });
     }
     if (lineItemsData) {
-        replace(lineItemsData);
+        replace(lineItemsData.map(({id, ...rest}) => rest));
     }
   }, [invoice, lineItemsData, reset, replace, taxes]);
 
@@ -151,18 +151,24 @@ export default function EditInvoicePage() {
     const { lineItems, ...invoiceCore } = invoiceData;
     
     try {
-        await updateDoc(invoiceRef, invoiceCore);
-        
         const batch = writeBatch(firestore);
-        
-        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
-        oldLineItemsSnapshot.forEach(doc => batch.delete(doc.ref));
 
+        // 1. Update the main invoice document
+        batch.update(invoiceRef, invoiceCore);
+        
+        // 2. Delete all existing line items for this invoice
+        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
+        oldLineItemsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // 3. Add the new line items
         lineItems.forEach(item => {
             const newItemRef = doc(collection(invoiceRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
         
+        // 4. Commit the batch
         await batch.commit();
 
         toast({

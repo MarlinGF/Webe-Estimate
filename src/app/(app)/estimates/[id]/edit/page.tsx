@@ -38,7 +38,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AddFromLibraryDialog } from '@/components/add-from-library-dialog';
 import type { Item, Client, Service, Part, Tax, Estimate, LineItem } from '@/lib/types';
 import { useCollection, useDoc, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, doc, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, updateDoc, getDocs } from 'firebase/firestore';
 
 
 type FormValues = {
@@ -93,12 +93,12 @@ export default function EditEstimatePage() {
   });
 
   useEffect(() => {
-    if (estimate) {
-        const taxId = taxes?.find(t => t.rate === estimate.tax / estimate.subtotal)?.id || 'none';
+    if (estimate && taxes) {
+        const taxId = taxes.find(t => estimate.tax > 0 && t.rate === estimate.tax / estimate.subtotal)?.id || 'none';
         reset({ ...estimate, taxId });
     }
     if (lineItemsData) {
-        replace(lineItemsData);
+        replace(lineItemsData.map(({id, ...rest}) => rest));
     }
   }, [estimate, lineItemsData, reset, replace, taxes]);
 
@@ -133,7 +133,7 @@ export default function EditEstimatePage() {
   };
 
  const onSubmit = async (data: FormValues) => {
-    if (!user || !firestore || !estimateRef) return;
+    if (!user || !firestore || !estimateRef || !lineItemsRef) return;
     
     const estimateData = {
       ...data,
@@ -146,22 +146,24 @@ export default function EditEstimatePage() {
     const { lineItems, ...estimateCore } = estimateData;
     
     try {
-        await updateDoc(estimateRef, estimateCore);
-        
-        // This is a simple way to update line items: delete all existing and add new ones.
-        // For large collections, a more sophisticated diffing approach would be better.
         const batch = writeBatch(firestore);
-        
-        // Delete old line items
-        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
-        oldLineItemsSnapshot.forEach(doc => batch.delete(doc.ref));
 
-        // Add new line items
+        // 1. Update the main estimate document
+        batch.update(estimateRef, estimateCore);
+        
+        // 2. Delete all existing line items for this estimate
+        const oldLineItemsSnapshot = await getDocs(lineItemsRef);
+        oldLineItemsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+
+        // 3. Add the new line items
         lineItems.forEach(item => {
             const newItemRef = doc(collection(estimateRef, 'lineItems'));
             batch.set(newItemRef, item);
         });
         
+        // 4. Commit the batch
         await batch.commit();
 
         toast({
