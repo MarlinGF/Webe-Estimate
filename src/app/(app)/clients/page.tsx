@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -37,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function ClientsPage() {
   const { firestore, user } = useFirebase();
   const { toast } = useToast();
+  const router = useRouter();
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   
@@ -118,28 +119,25 @@ export default function ClientsPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead>Address</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && <TableRow><TableCell colSpan={5}>Loading...</TableCell></TableRow>}
+              {isLoading && <TableRow><TableCell colSpan={4}>Loading...</TableCell></TableRow>}
               {!isLoading && clients?.map((client) => (
-                <TableRow key={client.id}>
+                <TableRow 
+                  key={client.id} 
+                  onClick={() => router.push(`/clients/${client.id}`)}
+                  className="cursor-pointer"
+                >
                   <TableCell className="font-medium">
-                    <Link
-                      href={`/clients/${client.id}`}
-                      className="hover:underline text-primary"
-                    >
                       {client.firstName} {client.lastName}
-                    </Link>
                   </TableCell>
                   <TableCell>{client.email}</TableCell>
                   <TableCell>{client.phone}</TableCell>
-                  <TableCell>{client.address}</TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

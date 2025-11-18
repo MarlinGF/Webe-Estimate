@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -24,6 +25,7 @@ import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase'
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Estimate, Invoice } from '@/lib/types';
 import { useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
 
 
 export default function ClientDetailPage() {
@@ -62,14 +64,23 @@ export default function ClientDetailPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-4 mb-4">
+            <Button variant="outline" size="icon" className="h-7 w-7" asChild>
+                <Link href="/clients">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="sr-only">Back to Clients</span>
+                </Link>
+            </Button>
+            <h1 className="text-xl font-semibold">{client.firstName} {client.lastName}</h1>
+        </div>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">{client.firstName} {client.lastName}</CardTitle>
+          <CardTitle className="text-2xl">Client Details</CardTitle>
           <CardDescription>
-            {client.email} &middot; {client.phone}
+            {client.email} {client.phone && `· ${client.phone}`}
           </CardDescription>
-          <CardDescription>{client.address}</CardDescription>
+          {client.address && <CardDescription>{client.address}</CardDescription>}
         </CardHeader>
       </Card>
       <Tabs defaultValue="estimates">
