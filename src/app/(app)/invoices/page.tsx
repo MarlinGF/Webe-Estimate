@@ -122,11 +122,9 @@ export default function InvoicesPage() {
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>}
               {!isLoading && combinedInvoices?.map((invoice) => (
-                <TableRow key={invoice.id}>
+                <TableRow key={invoice.id} onClick={() => router.push(`/invoices/${invoice.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">
-                    <Link href={`/invoices/${invoice.id}`} className="text-primary hover:underline">
                       {invoice.invoiceNumber}
-                    </Link>
                   </TableCell>
                   <TableCell>{invoice.client?.firstName} {invoice.client?.lastName}</TableCell>
                   <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
@@ -136,7 +134,7 @@ export default function InvoicesPage() {
                   <TableCell className="text-right">
                     {formatCurrency(invoice.total)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

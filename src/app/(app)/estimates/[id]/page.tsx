@@ -19,7 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, Download, FilePlus2 } from 'lucide-react';
+import { ArrowLeft, Download, FilePlus2, Pencil } from 'lucide-react';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import type { Client, Estimate, LineItem } from '@/lib/types';
@@ -69,6 +69,12 @@ export default function EstimateDetailPage() {
           </h1>
           <Badge variant={statusColors[estimate.status] || 'outline'} className="ml-auto sm:ml-0">{estimate.status}</Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
+             <Button variant="outline" size="sm" asChild>
+              <Link href={`/estimates/${id}/edit`}>
+                <Pencil className="h-4 w-4 mr-2"/>
+                Edit
+              </Link>
+            </Button>
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2"/>
               Download
@@ -140,6 +146,11 @@ export default function EstimateDetailPage() {
         </CardContent>
       </Card>
       <div className="mt-4 flex items-center justify-end gap-2 md:hidden">
+        <Button variant="outline" size="sm" asChild>
+              <Link href={`/estimates/${id}/edit`}>
+                Edit
+              </Link>
+        </Button>
         <Button variant="outline" size="sm">
           Download
         </Button>

@@ -122,11 +122,9 @@ export default function EstimatesPage() {
             <TableBody>
               {isLoading && <TableRow><TableCell colSpan={6}>Loading...</TableCell></TableRow>}
               {!isLoading && estimates?.map((estimate) => (
-                <TableRow key={estimate.id}>
+                <TableRow key={estimate.id} onClick={() => router.push(`/estimates/${estimate.id}`)} className="cursor-pointer">
                   <TableCell className="font-medium">
-                    <Link href={`/estimates/${estimate.id}`} className="text-primary hover:underline">
                       {estimate.estimateNumber}
-                    </Link>
                   </TableCell>
                   <TableCell>{getClientName(estimate.clientId)}</TableCell>
                   <TableCell>{new Date(estimate.estimateDate).toLocaleDateString()}</TableCell>
@@ -136,7 +134,7 @@ export default function EstimatesPage() {
                   <TableCell className="text-right">
                     {formatCurrency(estimate.total)}
                   </TableCell>
-                  <TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button

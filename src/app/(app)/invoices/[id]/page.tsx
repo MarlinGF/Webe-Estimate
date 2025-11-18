@@ -19,7 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 import { notFound, useParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Download } from 'lucide-react';
+import { ArrowLeft, CreditCard, Download, Pencil } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useDoc, useFirebase, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
@@ -72,6 +72,12 @@ export default function InvoiceDetailPage() {
           </h1>
           <Badge variant={statusColors[invoice.status] || 'outline'} className="ml-auto sm:ml-0">{invoice.status}</Badge>
           <div className="hidden items-center gap-2 md:ml-auto md:flex">
+             <Button variant="outline" size="sm" asChild>
+              <Link href={`/invoices/${id}/edit`}>
+                <Pencil className="h-4 w-4 mr-2"/>
+                Edit
+              </Link>
+            </Button>
             <Button variant="outline" size="sm">
               <Download className="h-4 w-4 mr-2"/>
               Download PDF
@@ -158,6 +164,11 @@ export default function InvoiceDetailPage() {
         </CardContent>
       </Card>
       <div className="mt-4 flex items-center justify-end gap-2 md:hidden">
+         <Button variant="outline" size="sm" asChild>
+            <Link href={`/invoices/${id}/edit`}>
+              Edit
+            </Link>
+          </Button>
          <Button variant="outline" size="sm">
             Download PDF
         </Button>
