@@ -22,15 +22,33 @@ import { formatCurrency } from '@/lib/utils';
 import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import type { Estimate } from '@/lib/types';
-import { useMemo } from 'react';
+import type { Estimate, Client } from '@/lib/types';
+import { useMemo, useState, useEffect } from 'react';
 
 export default function EstimatesPage() {
   const { firestore, user } = useFirebase();
 
   const estimatesPath = useMemo(() => user ? `users/${user.uid}/estimates` : '', [user]);
   const estimatesCollection = useMemoFirebase(() => user ? query(collection(firestore, estimatesPath)) : null, [firestore, user, estimatesPath]);
-  const { data: estimates, isLoading } = useCollection<Estimate>(estimatesCollection);
+  const { data: estimates, isLoading: isLoadingEstimates } = useCollection<Estimate>(estimatesCollection);
+
+  const clientsPath = useMemo(() => user ? `users/${user.uid}/clients` : '', [user]);
+  const clientsCollection = useMemoFirebase(() => user ? collection(firestore, clientsPath) : null, [firestore, user, clientsPath]);
+  const { data: clients, isLoading: isLoadingClients } = useCollection<Client>(clientsCollection);
+
+  const [clientsById, setClientsById] = useState<{[key: string]: Client}>({});
+
+  useEffect(() => {
+    if (clients) {
+      const byId = clients.reduce((acc, client) => {
+        acc[client.id] = client;
+        return acc;
+      }, {} as {[key: string]: Client});
+      setClientsById(byId);
+    }
+  }, [clients]);
+
+  const isLoading = isLoadingEstimates || isLoadingClients;
   
   const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     Approved: 'default',
@@ -38,6 +56,11 @@ export default function EstimatesPage() {
     Rejected: 'destructive',
     Draft: 'outline',
   };
+
+  const getClientName = (clientId: string) => {
+    const client = clientsById[clientId];
+    return client ? `${client.firstName} ${client.lastName}` : clientId;
+  }
 
   return (
     <Card>
@@ -60,7 +83,7 @@ export default function EstimatesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Number</TableHead>
-              <TableHead>Client ID</TableHead>
+              <TableHead>Client</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Amount</TableHead>
@@ -75,7 +98,7 @@ export default function EstimatesPage() {
                     {estimate.estimateNumber}
                   </Link>
                 </TableCell>
-                <TableCell>{estimate.clientId}</TableCell>
+                <TableCell>{getClientName(estimate.clientId)}</TableCell>
                 <TableCell>{estimate.estimateDate}</TableCell>
                 <TableCell>
                   <Badge variant={statusColors[estimate.status] || 'outline'}>{estimate.status}</Badge>
