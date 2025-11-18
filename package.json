@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "genkit start & next dev --turbopack -p 9002",
-    "genkit:dev": "genkit start",
-    "genkit:watch": "genkit start --watch",
+    "dev": "node node_modules/next/dist/bin/next dev --turbopack -p 9002",
+    "genkit:dev": "node node_modules/genkit-cli/dist/bin/genkit.js start",
+    "genkit:watch": "node node_modules/genkit-cli/dist/bin/genkit.js start --watch",
     "build": "NODE_ENV=production next build",
     "start": "next start -p 9002",
     "lint": "next lint",
