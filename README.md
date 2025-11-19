@@ -10,10 +10,10 @@ This repo contains the Firebase Studio generated starter for the WeBe Estimate U
 The Firebase app boots automatically if `NEXT_PUBLIC_FIREBASE_CONFIG` is present. If you prefer to hardcode values for quick prototyping, you can temporarily edit `src/firebase/config.ts`, but avoid committing secrets.
 
 ## Firebase Project Linking
-- Ensure the Firebase CLI is installed: `npm install -g firebase-tools`
-- Log in once locally: `firebase login`
-- Point the repo at the Studio project `studio-4082797513-9a323`: `firebase use studio-4082797513-9a323`
-- Run `firebase projects:list` to verify the alias and access
+- Ensure the Firebase CLI is available. If global installs are locked down, run `npm install --save-dev firebase-tools` (already in package.json) and use `npx firebase <command>`
+- Log in once locally: `npx firebase login`
+- Point the repo at the Studio project `studio-4082797513-9a323`: `npx firebase use studio-4082797513-9a323`
+- Run `npx firebase projects:list` to verify the alias and access
 
 Additional Firebase products (Hosting, Auth, Storage rules) can be configured later via Firebase Console or `firebase init`. For App Hosting, the runtime will inject the config automatically, so keep the environment variable fallback for local runs.
 
