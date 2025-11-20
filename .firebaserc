@@ -1,7 +1,16 @@
 {
   "projects": {
-    "webe-connection": "we-be-plus"
+    "webe-connection": "we-be-plus",
+    "default": "we-be-plus"
   },
-  "targets": {},
+  "targets": {
+    "we-be-plus": {
+      "hosting": {
+        "estimates": [
+          "estimates-webefriends"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
