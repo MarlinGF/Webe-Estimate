@@ -148,6 +148,7 @@ export default function EditEstimatePage() {
       tax: taxAmount,
       total,
       taxId: data.taxId === 'none' ? undefined : data.taxId,
+      webeContext: estimate?.webeContext,
     };
     
     try {

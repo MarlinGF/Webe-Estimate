@@ -51,6 +51,7 @@ export interface Estimate {
   total: number;
   status: 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Converted';
   convertedInvoiceId?: string;
+  webeContext?: WeBeContext;
 }
 
 export interface Invoice {
@@ -69,6 +70,7 @@ export interface Invoice {
   total: number;
   amountPaid: number;
   status: 'Draft' | 'Sent' | 'Paid' | 'Overdue';
+  webeContext?: WeBeContext;
 }
 
 export interface Project {
@@ -78,4 +80,12 @@ export interface Project {
   budget: number;
   postedBy: string;
   location: string;
+}
+
+export interface WeBeContext {
+  sessionId?: string;
+  pageId?: string;
+  userId?: string;
+  page?: unknown;
+  user?: unknown;
 }

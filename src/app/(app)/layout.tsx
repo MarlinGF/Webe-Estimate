@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
 import { Header } from '@/components/header';
 import { MainNav } from '@/components/main-nav';
 import { FileText } from 'lucide-react';
 import Link from 'next/link';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { FirebaseClientProvider, useFirebase, initiateAnonymousSignIn } from '@/firebase';
+import { FirebaseClientProvider, useFirebase } from '@/firebase';
+import { EstimatorSessionProvider, useEstimatorSession } from '@/context/estimator-session';
 
 function AppContent({ children }: { children: React.ReactNode }) {
-  const { auth, user, isUserLoading } = useFirebase();
+  const { user, isUserLoading } = useFirebase();
+  const { status, error } = useEstimatorSession();
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [auth, user, isUserLoading]);
+  const isLoadingState = isUserLoading || status === 'waiting' || status === 'authenticating';
+  const shouldBlockContent = !isLoadingState && !user && status !== 'standalone';
 
   return (
     <SidebarProvider>
@@ -36,7 +34,17 @@ function AppContent({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col">
           <Header />
           <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 bg-muted/40">
-            {isUserLoading ? <div>Loading...</div> : children}
+            {isLoadingState && (
+              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                Waiting for WeBe session...
+              </div>
+            )}
+            {shouldBlockContent && (
+              <div className="flex flex-1 items-center justify-center text-sm text-destructive">
+                {error || 'Unable to authenticate with the WeBe session. Please reopen from the main app.'}
+              </div>
+            )}
+            {!isLoadingState && (user || status === 'standalone') ? children : null}
           </main>
         </div>
       </div>
@@ -47,7 +55,9 @@ function AppContent({ children }: { children: React.ReactNode }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <FirebaseClientProvider>
-      <AppContent>{children}</AppContent>
+      <EstimatorSessionProvider>
+        <AppContent>{children}</AppContent>
+      </EstimatorSessionProvider>
     </FirebaseClientProvider>
   );
 }

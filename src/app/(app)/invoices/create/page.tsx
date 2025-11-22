@@ -40,6 +40,7 @@ import type { Item, Client, Service, Part, Tax } from '@/lib/types';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, doc, writeBatch, addDoc } from 'firebase/firestore';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { useEstimatorSession } from '@/context/estimator-session';
 
 
 type FormValues = {
@@ -62,6 +63,7 @@ export default function CreateInvoicePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
+  const { session } = useEstimatorSession();
 
   const clientsCollectionRef = useMemoFirebase(() => user ? collection(firestore, 'users', user.uid, 'clients') : null, [firestore, user]);
   const { data: clientList, isLoading: isLoadingClients } = useCollection<Client>(clientsCollectionRef);
@@ -141,6 +143,16 @@ export default function CreateInvoicePage() {
  const onSubmit = async (data: FormValues) => {
     if (!user || !firestore) return;
     
+    const webeContext = session
+      ? {
+          sessionId: session.sessionId,
+          pageId: session.pageId,
+          userId: session.userId,
+          page: session.page,
+          user: session.user,
+        }
+      : undefined;
+
     const invoiceData = {
       ...data,
       userId: user.uid,
@@ -149,6 +161,7 @@ export default function CreateInvoicePage() {
       tax: taxAmount,
       total,
       taxId: data.taxId === 'none' ? undefined : data.taxId,
+      webeContext,
     };
 
     const { lineItems, ...invoiceCore } = invoiceData;

@@ -5,6 +5,10 @@ This repo contains the Firebase Studio generated starter for the WeBe Estimate U
 ## Local Development
 - `npm install`
 - Copy `.env.example` to `.env.local` and paste your Firebase web config as the JSON string for `NEXT_PUBLIC_FIREBASE_CONFIG`
+- Provide the WeBe integration values:
+	- `NEXT_PUBLIC_WEBE_APP_ORIGIN` (e.g. `https://app.webe.ws`)
+	- `NEXT_PUBLIC_WEBE_API_BASE_URL` (same as origin unless overridden)
+	- Optional `NEXT_PUBLIC_ALLOW_ANON_FALLBACK=true` when testing the estimator outside of the main app
 - `npm run dev`
 
 The Firebase app boots automatically if `NEXT_PUBLIC_FIREBASE_CONFIG` is present. If you prefer to hardcode values for quick prototyping, you can temporarily edit `src/firebase/config.ts`, but avoid committing secrets.
@@ -31,3 +35,4 @@ git push origin main
 - Flesh out the core estimate flows under `src/app/(app)`
 - Confirm which Firebase products are required (Auth, Firestore, Storage)
 - Coordinate with the main WeBe project on deployment (subdomain vs. integrated route)
+- Hook UI actions (e.g. “Message customer”) to the new helpers in `src/lib/webe-api.ts`

@@ -97,6 +97,7 @@ export default function EstimateDetailPage() {
         taxId: estimate.taxId,
         amountPaid: 0,
         userId: user.uid,
+        webeContext: estimate.webeContext,
       });
 
       // 2. Copy line items to the new invoice's subcollection
