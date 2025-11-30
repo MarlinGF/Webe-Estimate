@@ -326,7 +326,7 @@ export default function CreateInvoicePage() {
                             render={({ field: controllerField }) => (
                                 <div className="flex items-start gap-1">
                                 <RichTextEditor
-                                    value={controllerField.value}
+                                  value={controllerField.value ?? ''}
                                     onChange={controllerField.onChange}
                                     userId={user?.uid}
                                 />

@@ -121,7 +121,7 @@ export function EditPartDialog({ part, onUpdatePart, onOpenChange }: EditPartDia
                 defaultValue={part.description}
                 render={({ field }) => (
                     <RichTextEditor
-                    value={field.value}
+                  value={field.value ?? ''}
                     onChange={field.onChange}
                     />
                 )}

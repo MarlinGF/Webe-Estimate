@@ -124,7 +124,7 @@ export function AddServiceDialog({ onAddService, children }: AddServiceDialogPro
                 control={control}
                 render={({ field }) => (
                     <RichTextEditor
-                    value={field.value}
+                  value={field.value ?? ''}
                     onChange={field.onChange}
                     />
                 )}

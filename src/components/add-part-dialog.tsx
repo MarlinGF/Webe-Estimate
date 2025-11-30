@@ -127,7 +127,7 @@ export function AddPartDialog({ onAddPart, children }: AddPartDialogProps) {
                 control={control}
                 render={({ field }) => (
                     <RichTextEditor
-                    value={field.value}
+                  value={field.value ?? ''}
                     onChange={field.onChange}
                     />
                 )}

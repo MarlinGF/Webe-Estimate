@@ -48,7 +48,7 @@ type FormValues = {
   estimateNumber: string;
   estimateDate: string;
   expiryDate: string;
-  status: 'Draft' | 'Sent' | 'Approved' | 'Rejected';
+  status: 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Converted';
   lineItems: { description: string; quantity: number; price: number }[];
 };
 

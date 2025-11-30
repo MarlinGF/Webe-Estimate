@@ -310,7 +310,7 @@ export default function CreateEstimatePage() {
                             render={({ field: controllerField }) => (
                                 <div className="flex items-start gap-1">
                                 <RichTextEditor
-                                    value={controllerField.value}
+                                  value={controllerField.value ?? ''}
                                     onChange={controllerField.onChange}
                                     placeholder="Item description..."
                                     userId={user?.uid}

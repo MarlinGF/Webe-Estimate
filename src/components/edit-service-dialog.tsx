@@ -117,7 +117,7 @@ export function EditServiceDialog({ service, onUpdateService, onOpenChange }: Ed
                 defaultValue={service.description}
                 render={({ field }) => (
                     <RichTextEditor
-                    value={field.value}
+                  value={field.value ?? ''}
                     onChange={field.onChange}
                     />
                 )}

@@ -39,7 +39,7 @@ const generateItemImageFlow = ai.defineFlow(
     outputSchema: GenerateItemImageOutputSchema,
   },
   async ({name}) => {
-    const {media} = await ai.generate({
+    const result = await ai.generate({
       model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: `Generate a high-quality, professional product image for the following item: ${name}. The image should be on a clean, light-colored background, well-lit, and suitable for a business catalog or library.`,
       config: {
@@ -47,10 +47,11 @@ const generateItemImageFlow = ai.defineFlow(
       },
     });
 
-    if (!media.url) {
+    const imageUrl = result.media?.url;
+    if (!imageUrl) {
       throw new Error('Image generation failed.');
     }
 
-    return {imageUrl: media.url};
+    return {imageUrl};
   }
 );

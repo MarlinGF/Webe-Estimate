@@ -42,6 +42,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-1',
     estimateNumber: 'EST-2024-001',
+    clientId: mockClients[0].id,
     client: mockClients[0],
     estimateDate: '2024-07-15',
     expiryDate: '2024-08-14',
@@ -54,6 +55,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-2',
     estimateNumber: 'EST-2024-002',
+    clientId: mockClients[1].id,
     client: mockClients[1],
     estimateDate: '2024-07-18',
     expiryDate: '2024-08-17',
@@ -66,6 +68,7 @@ export const estimates: Estimate[] = [
   {
     id: 'est-3',
     estimateNumber: 'EST-2024-003',
+    clientId: mockClients[2].id,
     client: mockClients[2],
     estimateDate: '2024-07-20',
     expiryDate: '2024-08-19',
@@ -82,6 +85,7 @@ export const invoices: Invoice[] = [
     id: 'inv-1',
     invoiceNumber: 'INV-2024-001',
     estimateNumber: 'EST-2024-001',
+    clientId: mockClients[0].id,
     client: mockClients[0],
     invoiceDate: '2024-07-20',
     dueDate: '2024-08-19',
@@ -96,6 +100,7 @@ export const invoices: Invoice[] = [
     id: 'inv-2',
     invoiceNumber: 'INV-2024-002',
     estimateNumber: 'EST-2024-004', // Made up for example
+    clientId: mockClients[3].id,
     client: mockClients[3],
     invoiceDate: '2024-06-01',
     dueDate: '2024-07-01',
@@ -110,6 +115,7 @@ export const invoices: Invoice[] = [
     id: 'inv-3',
     invoiceNumber: 'INV-2024-003',
     estimateNumber: 'EST-2024-005', // Made up for example
+    clientId: mockClients[1].id,
     client: mockClients[1],
     invoiceDate: '2024-07-22',
     dueDate: '2024-08-21',
